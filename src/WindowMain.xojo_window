@@ -95,9 +95,7 @@ End
 #tag Events CanvasPreview
 	#tag Event
 		Sub Paint(g As Graphics, areas() As Rect)
-		  if SVGString <> "" then
-		    g.DrawSVG SVGString, 0, 0
-		  end if
+		  g.DrawSVG SVGString, 0, 0
 		  
 		End Sub
 	#tag EndEvent
@@ -382,6 +380,6 @@ End
 		Group="Behavior"
 		InitialValue=""
 		Type="String"
-		EditorType=""
+		EditorType="MultiLineEditor"
 	#tag EndViewProperty
 #tag EndViewBehavior
