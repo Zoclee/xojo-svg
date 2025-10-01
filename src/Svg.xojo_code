@@ -42,9 +42,75 @@ Protected Module SVG
 
 	#tag Method, Flags = &h21
 		Private Sub renderNode(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
-		  //Dim e As DrawSVG.SVGException
+		  Dim e As SVG.SVGException
 		  
-		  break
+		  select case node.Name
+		    
+		    //case "#comment"
+		    //// we ignore xml comments
+		    //
+		    //case "circle"
+		    //render_circle(node, g, parentMatrix, parentStyle)
+		    //
+		    //case "defs"
+		    //// we ignore these tags
+		    //
+		    //case "desc"
+		    //// we ignore these tags
+		    //
+		    //case "ellipse"
+		    //render_ellipse(node, g, parentMatrix, parentStyle)
+		    //
+		    //case "g"
+		    //render_g(node, g, parentMatrix, parentStyle)
+		    //
+		    //case "image"
+		    //render_image(node, g, parentMatrix, parentStyle)
+		    //
+		    //case "line"
+		    //render_line(node, g, parentMatrix, parentStyle)
+		    //
+		    //case "metadata"
+		    //// we ignore these tags
+		    //
+		    //case "path"
+		    //render_path(node, g, parentMatrix, parentStyle)
+		    //
+		    //case "polygon"
+		    //render_polygon(node, g, parentMatrix, parentStyle)
+		    //
+		    //case "polyline"
+		    //render_polyline(node, g, parentMatrix, parentStyle)
+		    //
+		    //case "rect"
+		    //render_rect(node, g, parentMatrix, parentStyle)
+		    //
+		    //case "style"
+		    //process_style(node)
+		    //
+		    //case "svg"
+		    //render_svg(node, g, parentMatrix, parentStyle)
+		    //
+		    //case "text"
+		    //render_text(node, g, parentMatrix, parentStyle)
+		    //
+		    //case "title"
+		    //// we ignore these tags
+		    
+		  case else
+		    
+		    // we only want to raise the unknown element exception during debugging,
+		    // and during runtime we simply ignore unknown elements
+		    
+		    #if DebugBuild then
+		      e = new SVG.SVGException()
+		      e.ErrorNumber = 4
+		      e.Message = "Unknown element: " + node.Name
+		      Raise e
+		    #endif
+		    
+		  end select
+		  
 		  
 		  //if node.Name.Left(9) = "sodipodi:" then
 		  //// we ignore sodipodi tags
