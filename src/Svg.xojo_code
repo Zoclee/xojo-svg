@@ -513,6 +513,43 @@ Protected Module SVG
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
+		Private Sub RenderPath(g As Graphics, path As GraphicsPath, style As JSONItem, matrix() As Double)
+		  Var fill As String
+		  Var stroke As String
+		  Var strokeWidth As Double
+		  
+		  fill = style.LookupString("fill", "#000000")
+		  if (fill <> "none") and style.HasName("fill-opacity") then
+		    if Val(style.Value("fill-opacity")) = 0 then
+		      fill = "none"
+		    elseif Val(style.Value("fill-opacity")) = 1 then
+		      // do nothing
+		    else
+		      'break // todo
+		    end if
+		  end if
+		  stroke = style.LookupString("stroke", "")
+		  strokeWidth = style.LookupDouble("stroke-width", 1) * matrix(0)
+		  
+		  // fill
+		  
+		  if fill <> "none" then
+		    g.DrawingColor = determineColor(fill)
+		    g.FillPath path, true
+		  end if
+		  
+		  // stroke
+		  
+		  if (stroke <> "none") and (stroke <> "") and (strokeWidth > 0) then
+		    g.DrawingColor = determineColor(stroke)
+		    g.PenSize = strokeWidth
+		    g.DrawPath path, true
+		  end if
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
 		Private Sub renderXML(g As Graphics, xdoc As XmlDocument, x As Integer, y As Integer, w1 As Integer = -10000, h1 As Integer = -10000, sx As Integer = 0, sy As Integer = 0, w2 As Integer = -10000, h2 As Integer = -10000)
 		  Var i As Integer
 		  Var matrix() As Double
@@ -621,9 +658,6 @@ Protected Module SVG
 		  Var cx As Double
 		  Var cy As Double
 		  Var r As Double
-		  Var fill As String
-		  Var stroke As String
-		  Var strokeWidth As Double
 		  Var pointCount As Integer
 		  Var theta As Double
 		  Var path As GraphicsPath
@@ -637,18 +671,6 @@ Protected Module SVG
 		  
 		  cx = style.LookupDouble("cx")
 		  cy = style.LookupDouble("cy")
-		  fill = style.LookupString("fill", "#000000")
-		  if (fill <> "none") and style.HasName("fill-opacity") then
-		    if Val(style.Value("fill-opacity")) = 0 then
-		      fill = "none"
-		    elseif Val(style.Value("fill-opacity")) = 1 then
-		      // do nothing
-		    else
-		      'break // todo
-		    end if
-		  end if
-		  stroke = style.LookupString("stroke", "")
-		  strokeWidth = style.LookupDouble("stroke-width", 1) * matrix(0)
 		  r = style.LookupDouble("r") 
 		  
 		  if (r > 0) then
@@ -679,20 +701,7 @@ Protected Module SVG
 		      i = i + 1
 		    wend
 		    
-		    // fill
-		    
-		    if fill <> "none" then
-		      g.DrawingColor = determineColor(fill)
-		      g.FillPath path, true
-		    end if
-		    
-		    // stroke
-		    
-		    if (stroke <> "none") and (stroke <> "") and (strokeWidth > 0) then
-		      g.DrawingColor = determineColor(stroke)
-		      g.PenSize = strokeWidth
-		      g.DrawPath path, true
-		    end if
+		    RenderPath g, path, style, matrix
 		    
 		  end if
 		  
@@ -704,16 +713,12 @@ Protected Module SVG
 		  Var localStyle As JSONItem
 		  Var style As JSONItem
 		  Var matrix() As Double
-		  Var points() As Integer
 		  Var tmpX As Double
 		  Var tmpY As Double
 		  Var x As Double
 		  Var y As Double
 		  Var width As Double
 		  Var height As Double
-		  Var fill As String
-		  Var stroke As String
-		  Var strokeWidth As Double
 		  Var path As GraphicsPath
 		  
 		  style = new JSONItem("{}")
@@ -727,18 +732,6 @@ Protected Module SVG
 		  y = style.LookupDouble("y")
 		  width = style.LookupDouble("width")
 		  height = style.LookupDouble("height")
-		  fill = style.LookupString("fill", "#000000")
-		  if (fill <> "none") and style.HasName("fill-opacity") then
-		    if Val(style.Value("fill-opacity")) = 0 then
-		      fill = "none"
-		    elseif Val(style.Value("fill-opacity")) = 1 then
-		      // do nothing
-		    else
-		      'break // todo
-		    end if
-		  end if
-		  stroke = style.LookupString("stroke", "")
-		  strokeWidth = style.LookupDouble("stroke-width", 1) * matrix(0)
 		  
 		  if (width > 0) and (height > 0) then
 		    
@@ -766,20 +759,7 @@ Protected Module SVG
 		    transformPoint tmpX, tmpY, matrix
 		    path.AddLineToPoint tmpX, tmpY
 		    
-		    // fill
-		    
-		    if fill <> "none" then
-		      g.DrawingColor = determineColor(fill)
-		      g.FillPath path, true
-		    end if
-		    
-		    // stroke
-		    
-		    if (stroke <> "none") and (stroke <> "") and (strokeWidth > 0) then
-		      g.DrawingColor = determineColor(stroke)
-		      g.PenSize = strokeWidth
-		      g.DrawPath path, true
-		    end if
+		    RenderPath g, path, style, matrix
 		    
 		  end if
 		  
