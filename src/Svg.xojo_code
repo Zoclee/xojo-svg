@@ -615,7 +615,6 @@ Protected Module SVG
 		  Var localStyle As JSONItem
 		  Var style As JSONItem
 		  Var matrix() As Double
-		  Var points() As Double
 		  Var i As Integer
 		  Var tmpX As Double
 		  Var tmpY As Double
@@ -654,35 +653,30 @@ Protected Module SVG
 		  
 		  if (r > 0) then
 		    
-		    // build polygon
+		    // build path
+		    
+		    path = new GraphicsPath()
 		    
 		    pointCount = 128
 		    i = 0
+		    
+		    theta = Pi * (i / (pointCount / 2))
+		    tmpX = cx + r * cos(theta) // center a + radius x * cos(theta)
+		    tmpY = cy + r * sin(theta) // center b + radius y * sin(theta)
+		    transformPoint tmpX, tmpY, matrix
+		    path.MoveToPoint tmpX, tmpY
+		    
+		    i = 1 
 		    while i <= pointCount 
 		      theta = Pi * (i / (pointCount / 2))
-		      points.Append cx + r * cos(theta) // center a + radius x * cos(theta)
-		      points.Append cy + r * sin(theta) // center b + radius y * sin(theta)
-		      i = i + 1
-		    wend
-		    
-		    // transform polygon
-		    
-		    i = 1
-		    while i < points.Ubound
-		      tmpX = points(i)
-		      tmpY = points(i + 1)
+		      
+		      tmpX = cx + r * cos(theta) // center a + radius x * cos(theta)
+		      tmpY = cy + r * sin(theta) // center b + radius y * sin(theta)
 		      transformPoint tmpX, tmpY, matrix
-		      points(i) = tmpX
-		      points(i + 1) = tmpY
-		      i = i + 2
-		    wend
-		    
-		    path = new GraphicsPath()
-		    path.MoveToPoint points(0), points(1)
-		    i = 2
-		    while i < points.Count
-		      path.AddLineToPoint points(i), points(i + 1)
-		      i = i + 2
+		      
+		      path.AddLineToPoint tmpX, tmpY
+		      
+		      i = i + 1
 		    wend
 		    
 		    // fill
