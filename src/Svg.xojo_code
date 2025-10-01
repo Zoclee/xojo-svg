@@ -402,10 +402,10 @@ Protected Module SVG
 		    //
 		    //case "polyline"
 		    //render_polyline(node, g, parentMatrix, parentStyle)
-		    //
-		    //case "rect"
-		    //render_rect(node, g, parentMatrix, parentStyle)
-		    //
+		    
+		  case "rect"
+		    render_rect(node, g, parentMatrix, parentStyle)
+		    
 		    //case "style"
 		    //process_style(node)
 		    
@@ -678,6 +678,93 @@ Protected Module SVG
 		      
 		      i = i + 1
 		    wend
+		    
+		    // fill
+		    
+		    if fill <> "none" then
+		      g.DrawingColor = determineColor(fill)
+		      g.FillPath path, true
+		    end if
+		    
+		    // stroke
+		    
+		    if (stroke <> "none") and (stroke <> "") and (strokeWidth > 0) then
+		      g.DrawingColor = determineColor(stroke)
+		      g.PenSize = strokeWidth
+		      g.DrawPath path, true
+		    end if
+		    
+		  end if
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub render_rect(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
+		  Var localStyle As JSONItem
+		  Var style As JSONItem
+		  Var matrix() As Double
+		  Var points() As Integer
+		  Var tmpX As Double
+		  Var tmpY As Double
+		  Var x As Double
+		  Var y As Double
+		  Var width As Double
+		  Var height As Double
+		  Var fill As String
+		  Var stroke As String
+		  Var strokeWidth As Double
+		  Var path As GraphicsPath
+		  
+		  style = new JSONItem("{}")
+		  style.ApplyValues parentStyle
+		  localStyle = buildStyleItem(node)
+		  style.ApplyValues localStyle
+		  matrix = buildTransformationMatrix(localStyle.Lookup("transform", ""))
+		  matrix = matrixMultiply(parentMatrix, matrix)
+		  
+		  x = style.LookupDouble("x")
+		  y = style.LookupDouble("y")
+		  width = style.LookupDouble("width")
+		  height = style.LookupDouble("height")
+		  fill = style.LookupString("fill", "#000000")
+		  if (fill <> "none") and style.HasName("fill-opacity") then
+		    if Val(style.Value("fill-opacity")) = 0 then
+		      fill = "none"
+		    elseif Val(style.Value("fill-opacity")) = 1 then
+		      // do nothing
+		    else
+		      'break // todo
+		    end if
+		  end if
+		  stroke = style.LookupString("stroke", "")
+		  strokeWidth = style.LookupDouble("stroke-width", 1) * matrix(0)
+		  
+		  if (width > 0) and (height > 0) then
+		    
+		    // build path
+		    
+		    path = new GraphicsPath()
+		    
+		    tmpX = x
+		    tmpY = y 
+		    transformPoint tmpX, tmpY, matrix
+		    path.MoveToPoint tmpX, tmpY
+		    
+		    tmpX = x
+		    tmpY = y + height - 1
+		    transformPoint tmpX, tmpY, matrix
+		    path.AddLineToPoint tmpX, tmpY
+		    
+		    tmpX = x + width - 1
+		    tmpY = y + height - 1
+		    transformPoint tmpX, tmpY, matrix
+		    path.AddLineToPoint tmpX, tmpY
+		    
+		    tmpX = x + width - 1
+		    tmpY = y
+		    transformPoint tmpX, tmpY, matrix
+		    path.AddLineToPoint tmpX, tmpY
 		    
 		    // fill
 		    
