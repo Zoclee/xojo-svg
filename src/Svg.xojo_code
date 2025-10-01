@@ -41,8 +41,8 @@ Protected Module SVG
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub renderNode(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
-		  Dim e As SVG.SVGException
+		Private Sub renderNode(node As XmlNode, g As Graphics, parentMatrix() As Double)
+		  Var e As SVG.SVGException
 		  
 		  select case node.Name
 		    
@@ -87,10 +87,10 @@ Protected Module SVG
 		    //
 		    //case "style"
 		    //process_style(node)
-		    //
-		    //case "svg"
-		    //render_svg(node, g, parentMatrix, parentStyle)
-		    //
+		    
+		  case "svg"
+		    render_svg(node, g, parentMatrix)
+		    
 		    //case "text"
 		    //render_text(node, g, parentMatrix, parentStyle)
 		    //
@@ -200,7 +200,6 @@ Protected Module SVG
 		  Dim wStr As String
 		  Dim hStr As String
 		  Dim svgImage As Picture
-		  Dim finalImage As Picture
 		  
 		  matrix = identityMatrix()
 		  
@@ -279,9 +278,27 @@ Protected Module SVG
 		      //g.DrawPicture finalImage, x, y, w1, h1, sx, sy, w2, h2
 		      
 		      svgImage = new Picture(w, h)
-		      renderNode(xdoc.Child(i), svgImage.Graphics, matrix, new JSONItem("{}"))
+		      renderNode(xdoc.Child(i), svgImage.Graphics, matrix)
 		      
 		    end if
+		    i = i + 1
+		  wend
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub render_svg(node As XmlNode, g As Graphics, parentMatrix() As Double)
+		  Var matrix() As Double
+		  Var i As Integer
+		  
+		  //matrix = buildTransformationMatrix(localStyle.Lookup("transform", ""))
+		  //matrix = matrixMultiply(parentMatrix, matrix)
+		  matrix = parentMatrix
+		  
+		  i = 0
+		  while i < node.ChildCount
+		    renderNode node.Child(i), g, matrix
 		    i = i + 1
 		  wend
 		  
