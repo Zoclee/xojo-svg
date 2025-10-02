@@ -625,9 +625,9 @@ Protected Module SVG
 		    //case "image"
 		    //render_image(node, g, parentMatrix, parentStyle)
 		    //
-		    //case "line"
-		    //render_line(node, g, parentMatrix, parentStyle)
-		    //
+		  case "line"
+		    render_line(node, g, parentMatrix, parentStyle)
+		    
 		    //case "metadata"
 		    //// we ignore these tags
 		    //
@@ -750,7 +750,7 @@ Protected Module SVG
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub RenderPath(g As Graphics, path As GraphicsPath, style As JSONItem, matrix() As Double)
+		Private Sub RenderPath(g As Graphics, path As GraphicsPath, style As JSONItem, scale As Double, closed As Boolean)
 		  Var fill As String
 		  Var stroke As String
 		  Var strokeWidth As Double
@@ -766,7 +766,7 @@ Protected Module SVG
 		    end if
 		  end if
 		  stroke = style.LookupString("stroke", "")
-		  strokeWidth = style.LookupDouble("stroke-width", 1) * matrix(0)
+		  strokeWidth = style.LookupDouble("stroke-width", 1) * scale
 		  
 		  // fill
 		  
@@ -780,8 +780,10 @@ Protected Module SVG
 		  if (stroke <> "none") and (stroke <> "") and (strokeWidth > 0) then
 		    g.DrawingColor = determineColor(stroke)
 		    g.PenSize = strokeWidth
-		    g.DrawPath path, true
+		    g.LineCap = Graphics.LineCapTypes.Butt
+		    g.DrawPath path, closed
 		  end if
+		  
 		  
 		End Sub
 	#tag EndMethod
@@ -937,7 +939,7 @@ Protected Module SVG
 		      i = i + 1
 		    wend
 		    
-		    RenderPath g, path, style, matrix
+		    RenderPath g, path, style, matrix(0), true
 		    
 		  end if
 		  
@@ -947,17 +949,17 @@ Protected Module SVG
 	#tag Method, Flags = &h21
 		Private Sub render_ellipse(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
 		  Var localStyle As JSONItem
-		  Dim style As JSONItem
-		  Dim matrix() As Double
-		  Dim i As Integer
-		  Dim tmpX As Double
-		  Dim tmpY As Double
-		  Dim cx As Double
-		  Dim cy As Double
-		  Dim rx As Double
-		  Dim ry As Double
-		  Dim pointCount As Integer
-		  Dim theta As Double
+		  Var style As JSONItem
+		  Var matrix() As Double
+		  Var i As Integer
+		  Var tmpX As Double
+		  Var tmpY As Double
+		  Var cx As Double
+		  Var cy As Double
+		  Var rx As Double
+		  Var ry As Double
+		  Var pointCount As Integer
+		  Var theta As Double
 		  Var path As GraphicsPath
 		  
 		  style = new JSONItem("{}")
@@ -998,10 +1000,47 @@ Protected Module SVG
 		      i = i + 1
 		    wend
 		    
-		    RenderPath g, path, style, matrix
+		    RenderPath g, path, style, matrix(0), true
 		    
 		  end if
 		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub render_line(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
+		  Var localStyle As JSONItem
+		  Var style As JSONItem
+		  Var matrix() As Double
+		  Var x1 As Double
+		  Var y1 As Double
+		  Var x2 As Double
+		  Var y2 As Double
+		  Var path As GraphicsPath
+		  
+		  style = new JSONItem("{}")
+		  style.ApplyValues parentStyle
+		  localStyle = buildStyleItem(node)
+		  style.ApplyValues localStyle
+		  matrix = buildTransformationMatrix(localStyle.Lookup("transform", ""))
+		  matrix = matrixMultiply(parentMatrix, matrix)
+		  
+		  x1 = style.LookupDouble("x1") 
+		  y1 = style.LookupDouble("y1") 
+		  x2 = style.LookupDouble("x2") 
+		  y2 = style.LookupDouble("y2") 
+		  
+		  // build path
+		  
+		  path = new GraphicsPath()
+		  
+		  transformPoint x1, y1, matrix
+		  path.MoveToPoint x1, y1
+		  
+		  transformPoint x2, y2, matrix
+		  path.AddLineToPoint x2, y2 
+		  
+		  RenderPath g, path, style, matrix(0), false
 		End Sub
 	#tag EndMethod
 
@@ -1056,7 +1095,7 @@ Protected Module SVG
 		    transformPoint tmpX, tmpY, matrix
 		    path.AddLineToPoint tmpX, tmpY
 		    
-		    RenderPath g, path, style, matrix
+		    RenderPath g, path, style, matrix(0), true
 		    
 		  end if
 		  
