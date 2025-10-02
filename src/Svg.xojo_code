@@ -610,8 +610,8 @@ Protected Module SVG
 		  case "circle"
 		    render_circle(node, g, parentMatrix, parentStyle)
 		    
-		    //case "defs"
-		    //// we ignore these tags
+		  case "defs"
+		    // we ignore these tags
 		    
 		  case "desc"
 		    // we ignore these tags
@@ -628,9 +628,9 @@ Protected Module SVG
 		  case "line"
 		    render_line(node, g, parentMatrix, parentStyle)
 		    
-		    //case "metadata"
-		    //// we ignore these tags
-		    //
+		  case "metadata"
+		    // we ignore these tags
+		    
 		    //case "path"
 		    //render_path(node, g, parentMatrix, parentStyle)
 		    
