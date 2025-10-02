@@ -811,6 +811,7 @@ Protected Module SVG
 		      h = 0
 		      
 		      //wStr = Trim(xdoc.Child(i).GetCIAttribute("width"))
+		      wStr = Trim(xdoc.Child(i).GetAttribute("width"))
 		      if wStr <> "" then
 		        if IsNumeric(wStr) then
 		          w = Val(wStr)
@@ -820,7 +821,7 @@ Protected Module SVG
 		      end if
 		      
 		      //hStr = Trim(xdoc.Child(i).GetCIAttribute("height"))
-		      hStr = Trim(xdoc.Child(i).GetAttribute("width"))
+		      hStr = Trim(xdoc.Child(i).GetAttribute("height"))
 		      if hStr <> "" then
 		        if IsNumeric(hStr) then
 		          h = Val(hStr)
