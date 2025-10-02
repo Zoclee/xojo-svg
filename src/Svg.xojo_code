@@ -633,9 +633,9 @@ Protected Module SVG
 		    //
 		    //case "path"
 		    //render_path(node, g, parentMatrix, parentStyle)
-		    //
-		    //case "polygon"
-		    //render_polygon(node, g, parentMatrix, parentStyle)
+		    
+		  case "polygon"
+		    render_polygon(node, g, parentMatrix, parentStyle)
 		    
 		  case "polyline"
 		    render_polyline(node, g, parentMatrix, parentStyle)
@@ -1045,15 +1045,16 @@ Protected Module SVG
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub render_polyline(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
-		  Dim localStyle As JSONItem
-		  Dim style As JSONItem
-		  Dim matrix() As Double
-		  Dim i As Integer
-		  Dim tmpX As Double
-		  Dim tmpY As Double
-		  Dim tmpArr() As String
-		  Dim coord() As String
+		Private Sub render_polygon(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
+		  Var localStyle As JSONItem
+		  Var style As JSONItem
+		  Var matrix() As Double
+		  Var i As Integer
+		  Var tmpX As Double
+		  Var tmpY As Double
+		  Var points() As Integer
+		  Var tmpArr() As String
+		  Var coord() As String
 		  Var path As GraphicsPath
 		  
 		  style = new JSONItem("{}")
@@ -1077,9 +1078,61 @@ Protected Module SVG
 		      tmpX = Val(coord(0))
 		      tmpY = Val(coord(1))
 		      transformPoint tmpX, tmpY, matrix
-		    else
-		      tmpX = 0 
-		      tmpY = 0
+		    end if
+		    path.MoveToPoint tmpX, tmpY
+		    
+		    i = 0
+		    while i <= tmpArr.Ubound
+		      coord = tmpArr(i).Split(",")
+		      if coord.Ubound = 1 then
+		        tmpX = Val(coord(0))
+		        tmpY = Val(coord(1))
+		        transformPoint tmpX, tmpY, matrix
+		        path.AddLineToPoint tmpX, tmpY
+		      end if
+		      i = i + 1
+		    wend
+		    
+		    RenderPath g, path, style, matrix(0), true, true, true
+		    
+		  end if
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub render_polyline(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
+		  Dim localStyle As JSONItem
+		  Dim style As JSONItem
+		  Dim matrix() As Double
+		  Dim i As Integer
+		  Var tmpX As Double
+		  Var tmpY As Double
+		  Var tmpArr() As String
+		  Var coord() As String
+		  Var path As GraphicsPath
+		  
+		  style = new JSONItem("{}")
+		  style.ApplyValues parentStyle
+		  localStyle = buildStyleItem(node)
+		  style.ApplyValues localStyle
+		  matrix = buildTransformationMatrix(localStyle.Lookup("transform", ""))
+		  matrix = matrixMultiply(parentMatrix, matrix)
+		  
+		  // build path
+		  
+		  path = new GraphicsPath()
+		  
+		  tmpArr = style.LookupString("points", "").Split(" ")
+		  
+		  if tmpArr.Count > 1 then
+		    
+		    i = 0
+		    coord = tmpArr(i).Split(",")
+		    if coord.Ubound = 1 then
+		      tmpX = Val(coord(0))
+		      tmpY = Val(coord(1))
+		      transformPoint tmpX, tmpY, matrix
 		    end if
 		    path.MoveToPoint tmpX, tmpY
 		    
