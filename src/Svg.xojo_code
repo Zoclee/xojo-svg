@@ -604,8 +604,8 @@ Protected Module SVG
 		  
 		  select case node.Name
 		    
-		    //case "#comment"
-		    //// we ignore xml comments
+		  case "#comment"
+		    // we ignore xml comments
 		    
 		  case "circle"
 		    render_circle(node, g, parentMatrix, parentStyle)
