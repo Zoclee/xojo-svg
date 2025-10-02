@@ -636,9 +636,9 @@ Protected Module SVG
 		    //
 		    //case "polygon"
 		    //render_polygon(node, g, parentMatrix, parentStyle)
-		    //
-		    //case "polyline"
-		    //render_polyline(node, g, parentMatrix, parentStyle)
+		    
+		  case "polyline"
+		    render_polyline(node, g, parentMatrix, parentStyle)
 		    
 		  case "rect"
 		    render_rect(node, g, parentMatrix, parentStyle)
@@ -750,7 +750,7 @@ Protected Module SVG
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub RenderPath(g As Graphics, path As GraphicsPath, style As JSONItem, scale As Double, closed As Boolean)
+		Private Sub RenderPath(g As Graphics, path As GraphicsPath, style As JSONItem, scale As Double, closed As Boolean, doFill As Boolean, doStroke As Boolean)
 		  Var fill As String
 		  Var stroke As String
 		  Var strokeWidth As Double
@@ -770,14 +770,14 @@ Protected Module SVG
 		  
 		  // fill
 		  
-		  if fill <> "none" then
+		  if fill <> "none" and doFill then
 		    g.DrawingColor = determineColor(fill)
 		    g.FillPath path, true
 		  end if
 		  
 		  // stroke
 		  
-		  if (stroke <> "none") and (stroke <> "") and (strokeWidth > 0) then
+		  if (stroke <> "none") and (stroke <> "") and (strokeWidth > 0) and doStroke then
 		    g.DrawingColor = determineColor(stroke)
 		    g.PenSize = strokeWidth
 		    g.LineCap = Graphics.LineCapTypes.Butt
@@ -939,7 +939,7 @@ Protected Module SVG
 		      i = i + 1
 		    wend
 		    
-		    RenderPath g, path, style, matrix(0), true
+		    RenderPath g, path, style, matrix(0), true, true, true
 		    
 		  end if
 		  
@@ -1000,7 +1000,7 @@ Protected Module SVG
 		      i = i + 1
 		    wend
 		    
-		    RenderPath g, path, style, matrix(0), true
+		    RenderPath g, path, style, matrix(0), true, true, true
 		    
 		  end if
 		  
@@ -1040,7 +1040,66 @@ Protected Module SVG
 		  transformPoint x2, y2, matrix
 		  path.AddLineToPoint x2, y2 
 		  
-		  RenderPath g, path, style, matrix(0), false
+		  RenderPath g, path, style, matrix(0), false, false, true
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub render_polyline(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
+		  Dim localStyle As JSONItem
+		  Dim style As JSONItem
+		  Dim matrix() As Double
+		  Dim i As Integer
+		  Dim tmpX As Double
+		  Dim tmpY As Double
+		  Dim tmpArr() As String
+		  Dim coord() As String
+		  Var path As GraphicsPath
+		  
+		  style = new JSONItem("{}")
+		  style.ApplyValues parentStyle
+		  localStyle = buildStyleItem(node)
+		  style.ApplyValues localStyle
+		  matrix = buildTransformationMatrix(localStyle.Lookup("transform", ""))
+		  matrix = matrixMultiply(parentMatrix, matrix)
+		  
+		  // build path
+		  
+		  path = new GraphicsPath()
+		  
+		  tmpArr = style.LookupString("points", "").Split(" ")
+		  
+		  if tmpArr.Count > 1 then
+		    
+		    i = 0
+		    coord = tmpArr(i).Split(",")
+		    if coord.Ubound = 1 then
+		      tmpX = Val(coord(0))
+		      tmpY = Val(coord(1))
+		      transformPoint tmpX, tmpY, matrix
+		    else
+		      tmpX = 0 
+		      tmpY = 0
+		    end if
+		    path.MoveToPoint tmpX, tmpY
+		    
+		    i = i + 1
+		    while i <= tmpArr.Ubound
+		      coord = tmpArr(i).Split(",")
+		      if coord.Ubound = 1 then
+		        tmpX = Val(coord(0))
+		        tmpY = Val(coord(1))
+		        transformPoint tmpX, tmpY, matrix
+		        path.AddLineToPoint tmpX, tmpY
+		      end if
+		      i = i + 1
+		    wend
+		    
+		    RenderPath g, path, style, matrix(0), false, true, true
+		    
+		  end if
+		  
+		  
 		End Sub
 	#tag EndMethod
 
@@ -1095,7 +1154,7 @@ Protected Module SVG
 		    transformPoint tmpX, tmpY, matrix
 		    path.AddLineToPoint tmpX, tmpY
 		    
-		    RenderPath g, path, style, matrix(0), true
+		    RenderPath g, path, style, matrix(0), true, true, true
 		    
 		  end if
 		  
