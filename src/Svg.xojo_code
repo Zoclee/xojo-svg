@@ -1,6 +1,28 @@
 #tag Module
 Protected Module SVG
 	#tag Method, Flags = &h21
+		Private Function angleBetweenVectors(u As REALbasic.Point, v As REALbasic.Point) As Double
+		  ' This project is a {Zoclee}™ open source initiative.
+		  ' www.zoclee.com
+		  
+		  Dim angle As Double
+		  
+		  angle = ACos( (u.X * v.X + u.Y * v.Y) / ( Sqrt(u.X^2 + u.Y^2) * Sqrt(v.X^2 + v.Y^2) ) )
+		  
+		  if (u.x * v.y - u.y * v.x) < 0 then
+		    angle = -Abs(angle)
+		  else
+		    angle = Abs(angle)
+		  end if
+		  
+		  angle = angle * RadToDeg
+		  
+		  return angle
+		  
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
 		Private Sub ApplyValues(Extends Item As JSONItem, withItem As JSONItem)
 		  Var i As Integer
 		  
@@ -459,6 +481,69 @@ Protected Module SVG
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
+		Private Sub loadCSS(styleData As String)
+		  Var className As String
+		  Var nodeName As String
+		  Var i As Integer
+		  Var ch As String
+		  Var dataLen As Integer
+		  Var state As Integer // 0 = next class, 1 = class name, 2 = property name, 3 = property value
+		  Var classProperties As JSONItem
+		  Var propName As String
+		  Var propValue As String
+		  
+		  dataLen = len(styleData)
+		  state = 0 // next class
+		  i = 1
+		  while i <= dataLen
+		    ch = Mid(styleData, i, 1)
+		    
+		    if Asc(ch) <= 32 then
+		      // do nothing
+		      
+		    elseif ch = "{" then
+		      classProperties = new JSONItem("{}")
+		      propName = ""
+		      state = 2 // property name
+		      
+		    elseif ch = "}" then
+		      if propName <> "" then
+		        classProperties.Value(Lowercase(propName)) = propValue
+		      end if
+		      mClasses.Value(Lowercase(Trim(className))) = classProperties
+		      state = 0 // next class
+		      
+		    elseif ch = ";" then
+		      classProperties.Value(Lowercase(propName)) = propValue
+		      propName = ""
+		      propValue = ""
+		      state = 2 // property name
+		      
+		    elseif ch = ":" then
+		      propValue = ""
+		      state = 3 // property value
+		      
+		    else
+		      select case state
+		      case 0 // next class
+		        className = ch
+		        state = 1 // class name
+		      case 1 // class name
+		        className = className + ch
+		      case 2 // property name
+		        propName = propName + ch
+		      case 3 // property value
+		        propValue = propValue + ch
+		      end select
+		    end if
+		    
+		    i = i + 1
+		  wend
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
 		Private Function LookupDouble(Extends item As JSONItem, name As String, defaultValue As Double = 0) As Double
 		  return Item.Lookup(name, defaultValue)
 		  
@@ -599,6 +684,24 @@ Protected Module SVG
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
+		Private Sub process_style(node As XmlNode)
+		  Var styleData As String
+		  
+		  //select case node.GetCIAttribute("type")
+		  select case node.GetAttribute("type")
+		    
+		  case "text/css"
+		    styleData = node.FirstChild.Value
+		    loadCSS(styleData)
+		    
+		  case else
+		    'break
+		    
+		  end select
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
 		Private Sub renderNode(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
 		  Var e As SVG.SVGException
 		  
@@ -619,9 +722,9 @@ Protected Module SVG
 		  case "ellipse"
 		    render_ellipse(node, g, parentMatrix, parentStyle)
 		    
-		    //case "g"
-		    //render_g(node, g, parentMatrix, parentStyle)
-		    //
+		  case "g"
+		    render_g(node, g, parentMatrix, parentStyle)
+		    
 		    //case "image"
 		    //render_image(node, g, parentMatrix, parentStyle)
 		    //
@@ -631,8 +734,8 @@ Protected Module SVG
 		  case "metadata"
 		    // we ignore these tags
 		    
-		    //case "path"
-		    //render_path(node, g, parentMatrix, parentStyle)
+		  case "path"
+		    render_path(node, g, parentMatrix, parentStyle)
 		    
 		  case "polygon"
 		    render_polygon(node, g, parentMatrix, parentStyle)
@@ -643,8 +746,8 @@ Protected Module SVG
 		  case "rect"
 		    render_rect(node, g, parentMatrix, parentStyle)
 		    
-		    //case "style"
-		    //process_style(node)
+		  case "style"
+		    process_style(node)
 		    
 		  case "svg"
 		    render_svg(node, g, parentMatrix, parentStyle)
@@ -652,8 +755,8 @@ Protected Module SVG
 		  case "text"
 		    render_text(node, g, parentMatrix, parentStyle)
 		    
-		    //case "title"
-		    //// we ignore these tags
+		  case "title"
+		    // we ignore these tags
 		    
 		  case else
 		    
@@ -1009,6 +1112,29 @@ Protected Module SVG
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
+		Private Sub render_g(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
+		  Var localStyle As JSONItem
+		  Var style As JSONItem
+		  Var matrix() As Double
+		  Var i As Integer
+		  
+		  style = new JSONItem("{}")
+		  style.ApplyValues parentStyle
+		  localStyle = buildStyleItem(node)
+		  style.ApplyValues localStyle
+		  matrix = buildTransformationMatrix(localStyle.Lookup("transform", ""))
+		  matrix = matrixMultiply(parentMatrix, matrix)
+		  
+		  i = 0
+		  while i < node.ChildCount
+		    renderNode node.Child(i), g, matrix, style
+		    i = i + 1
+		  wend
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
 		Private Sub render_line(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
 		  Var localStyle As JSONItem
 		  Var style As JSONItem
@@ -1042,6 +1168,1342 @@ Protected Module SVG
 		  path.AddLineToPoint x2, y2 
 		  
 		  RenderPath g, path, style, matrix(0), false, false, true
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub render_path(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
+		  Dim localStyle As JSONItem
+		  Dim style As JSONItem
+		  Dim matrix() As Double
+		  Dim i As UInt64
+		  Dim fill As String
+		  Dim stroke As String
+		  Dim strokeWidth As Double
+		  //Dim fs as new FigureShape
+		  Dim cs As CurveShape
+		  Dim d As String
+		  Dim ch As String
+		  Dim penX As Double
+		  Dim penY As Double
+		  Dim tmpX As Double
+		  Dim tmpY As Double
+		  Dim path() As String
+		  Dim continueImplicit As Boolean
+		  Dim prevCCommand As Boolean
+		  Dim prevQCommand As Boolean
+		  Dim prevControlX As Double
+		  Dim prevControlY As Double
+		  Dim itemFill As Boolean
+		  Dim itemFillColor As Color
+		  Dim itemStroke As Boolean
+		  Dim itemStrokeColor As Color
+		  Dim prevClosed As Boolean
+		  Dim currentCommand As String
+		  Dim additionalPath() As String
+		  Dim e As SVG.SVGException
+		  Dim x1 As Double
+		  Dim y1 As Double
+		  Dim x2 As Double
+		  Dim y2 As Double
+		  Dim flagA As Integer
+		  Dim flagS As Integer
+		  Dim rx As Double
+		  Dim ry As Double
+		  Dim theta As Double
+		  Dim x1Comp As Double
+		  Dim y1Comp As Double
+		  Dim cxComp As Double
+		  Dim cyComp As Double
+		  Dim cx As Double
+		  Dim cy As Double
+		  Dim theta1 As Integer
+		  Dim thetaDelta As Integer
+		  Dim tmpDbl As Double
+		  Dim u As REALbasic.Point
+		  Dim v As REALbasic.Point
+		  Dim currentAngle As Double
+		  Dim angleStep As Double
+		  Dim pathMB As MemoryBlock
+		  Dim adjustValue As Integer
+		  Dim relativeCommand As Boolean
+		  Dim tmpMatrix() As Double
+		  Dim tmpMatrix2() As Double
+		  Dim radiScale As Double
+		  Var shape As GraphicsPath
+		  
+		  shape = new GraphicsPath()
+		  
+		  style = new JSONItem("{}")
+		  style.ApplyValues parentStyle
+		  localStyle = buildStyleItem(node)
+		  style.ApplyValues localStyle
+		  matrix = buildTransformationMatrix(localStyle.Lookup("transform", ""))
+		  matrix = matrixMultiply(parentMatrix, matrix)
+		  
+		  fill = style.LookupString("fill", "#000000")
+		  if (fill <> "none") and style.HasName("fill-opacity") then
+		    if Val(style.Value("fill-opacity")) = 0 then
+		      fill = "none"
+		    elseif Val(style.Value("fill-opacity")) = 1 then
+		      // do nothing
+		    else
+		      'break // todo
+		    end if
+		  end if
+		  stroke = style.LookupString("stroke", "")
+		  strokeWidth = style.LookupDouble("stroke-width", 1) * matrix(0)
+		  
+		  // fill
+		  
+		  if (fill <> "none") then
+		    itemFill = true
+		    itemFillColor = determineColor(fill)
+		  else
+		    itemFill = false
+		  end if
+		  
+		  // stroke
+		  
+		  if (stroke <> "none") and (stroke <> "") and (strokeWidth > 0) then
+		    itemStroke = true
+		    itemStrokeColor = determineColor(stroke)
+		  else
+		    itemStroke = false
+		  end if
+		  
+		  // build figure shape
+		  
+		  penX = 0
+		  penY = 0
+		  prevClosed = false
+		  
+		  d = Trim(style.LookupString("d", ""))
+		  d = d.ReplaceAll(",", " ")
+		  
+		  pathMB = d
+		  
+		  Redim path(-1)
+		  path.Append ""
+		  i = 0
+		  while i < pathMB.Size
+		    ch = pathMB.StringValue(i, 1)
+		    
+		    if ch = " " then
+		      
+		      if path(path.Ubound) <> "" then
+		        path.Append ""
+		      end if
+		      
+		    elseif ch = "-" then
+		      
+		      if path(path.Ubound) <> "" then
+		        if right(path(path.Ubound), 1) = "e" then
+		          path(path.Ubound) = path(path.Ubound) + ch
+		        else
+		          path.Append "-"
+		        end if
+		      else
+		        path(path.Ubound) = ch
+		      end if
+		      
+		    elseif not IsNumeric(ch) and (ch <> ".") and (ch <> "-") and (ch <> "e") then
+		      
+		      if path(path.Ubound) <> "" then
+		        path.Append ch
+		      else
+		        path(path.Ubound) = ch
+		      end if
+		      path.Append ""
+		      
+		    elseif ch = "." then
+		      
+		      if Instr(0, path(path.Ubound), ".") > 0 then
+		        path.Append "."
+		      else
+		        path(path.Ubound) = path(path.Ubound) + ch
+		      end if
+		      
+		    else
+		      
+		      path(path.Ubound) = path(path.Ubound) + ch
+		      
+		    end if
+		    i = i + 1
+		  wend
+		  
+		  if path(path.Ubound) = "" then
+		    path.Remove(path.Ubound)
+		  end if
+		  
+		  // prep path to hide any possible artifacts created by multiple closed paths in a single path instruction
+		  
+		  i = 0
+		  additionalPath.Append "M"
+		  currentCommand = ""
+		  while i <= path.Ubound
+		    select case path(i)
+		      
+		    case "M", "m"
+		      if StrComp(path(i), "m", 0) = 0 then
+		        penX = penX + Val(path(i + 1))
+		        penY = penY + Val(path(i + 2))
+		        if i = 0 then
+		          relativeCommand = true
+		        end if
+		        //additionalPath.Append Str(penX, "-##########0.0####")
+		        //additionalPath.Append Str(penY, "-##########0.0####")
+		        additionalPath.Append Str(penX)
+		        additionalPath.Append Str(penY)
+		      else
+		        penX = Val(path(i + 1))
+		        penY = Val(path(i + 2))
+		        if i = 0 then
+		          relativeCommand = false
+		        end if
+		        additionalPath.Append path(i + 1)
+		        additionalPath.Append path(i + 2)
+		      end if
+		      
+		      currentCommand = path(i)
+		      
+		      i = i + 3
+		      if StrComp(currentCommand, "m", 0) = 0 then
+		        while (i <= path.Ubound) and IsNumeric(path(i))
+		          penX = penX + Val(path(i))
+		          penY = penY + Val(path(i + 1))
+		          i = i + 2
+		        wend
+		      else
+		        while (i <= path.Ubound) and IsNumeric(path(i))
+		          penX = Val(path(i))
+		          penY = Val(path(i + 1))
+		          i = i + 2
+		        wend
+		      end if
+		      
+		      while (i <= path.Ubound) and (path(i) <> "z")
+		        
+		        if StrComp(path(i), "A", 0) = 0 then // absolute elliptical arc
+		          
+		          penX = Val(path(i + 6))
+		          penY = Val(path(i + 7))
+		          i = i + 8
+		          while (i <= path.Ubound) and IsNumeric(path(i))
+		            penX = Val(path(i + 5))
+		            penY = Val(path(i + 6))
+		            i = i + 7
+		          wend
+		          
+		        elseif StrComp(path(i), "a", 0) = 0 then // relative elliptical arc
+		          
+		          penX = penX + Val(path(i + 6))
+		          penY = penY + Val(path(i + 7))
+		          i = i + 8
+		          while (i <= path.Ubound) and IsNumeric(path(i))
+		            penX = penX + Val(path(i + 5))
+		            penY = penY + Val(path(i + 6))
+		            i = i + 7
+		          wend
+		          
+		        elseif StrComp(path(i), "C", 0) = 0 then // absolute curveto
+		          
+		          penX = Val(path(i + 5))
+		          penY = Val(path(i + 6))
+		          i = i + 7
+		          while (i <= path.Ubound) and IsNumeric(path(i))
+		            penX = Val(path(i + 4))
+		            penY = Val(path(i + 5))
+		            i = i + 6
+		          wend
+		          
+		        elseif StrComp(path(i), "c", 0) = 0 then // relative curveto
+		          
+		          penX = penX + Val(path(i + 5))
+		          penY = penY + Val(path(i + 6))
+		          i = i + 7
+		          while (i <= path.Ubound) and IsNumeric(path(i))
+		            penX = penX + Val(path(i + 4))
+		            penY = penY + Val(path(i + 5))
+		            i = i + 6
+		          wend
+		          
+		        elseif StrComp(path(i), "H", 0) = 0 then // absolute horizontal lineto
+		          
+		          penX = Val(path(i + 1))
+		          
+		          i = i + 2
+		          while (i <= path.Ubound) and IsNumeric(path(i))
+		            penX = Val(path(i))
+		            i = i + 1
+		          wend
+		          
+		        elseif StrComp(path(i), "h", 0) = 0 then // relative horizontal lineto
+		          
+		          penX = penX + Val(path(i + 1))
+		          
+		          i = i + 2
+		          while (i <= path.Ubound) and IsNumeric(path(i))
+		            penX = penX + Val(path(i))
+		            i = i + 1
+		          wend
+		          
+		        elseif StrComp(path(i), "L", 0) = 0 then // absolute lineto
+		          
+		          penX = Val(path(i + 1))
+		          penY = Val(path(i + 2))
+		          
+		          i = i + 3
+		          while (i <= path.Ubound) and IsNumeric(path(i))
+		            penX = Val(path(i))
+		            penY = Val(path(i + 1))
+		            i = i + 2
+		          wend
+		          
+		        elseif StrComp(path(i), "l", 0) = 0 then // relative lineto
+		          
+		          penX = penX + Val(path(i + 1))
+		          penY = penY + Val(path(i + 2))
+		          
+		          i = i + 3
+		          while (i <= path.Ubound) and IsNumeric(path(i))
+		            penX = penX + Val(path(i))
+		            penY = penY + Val(path(i + 1))
+		            i = i + 2
+		          wend
+		          
+		        elseif StrComp(path(i), "M", 0) = 0 then // absolute  moveto
+		          
+		          penX = Val(path(i + 1))
+		          penY = Val(path(i + 2))
+		          i = i + 3
+		          while (i <= path.Ubound) and IsNumeric(path(i))
+		            penX = Val(path(i))
+		            penY = Val(path(i + 1))
+		            i = i + 2
+		          wend
+		          
+		        elseif StrComp(path(i), "m", 0) = 0 then // relative  moveto
+		          
+		          penX = penX + Val(path(i +1))
+		          penY = penY + Val(path(i +2))
+		          i = i + 3
+		          while (i <= path.Ubound) and IsNumeric(path(i))
+		            penX = penX + Val(path(i))
+		            penY = penY + Val(path(i +1))
+		            i = i + 2
+		          wend
+		          
+		        elseif StrComp(path(i), "Q", 0) = 0 then // absolute  quadratic Bézier curveto
+		          
+		          penX = Val(path(i + 3))
+		          penY = Val(path(i + 4))
+		          i = i + 5
+		          while (i <= path.Ubound) and IsNumeric(path(i))
+		            penX = Val(path(i + 2))
+		            penY = Val(path(i + 3))
+		            i = i + 4
+		          wend
+		          
+		        elseif StrComp(path(i), "q", 0) = 0 then // relative  quadratic Bézier curveto
+		          
+		          penX = penX + Val(path(i + 3))
+		          penY = penY + Val(path(i + 4))
+		          i = i + 5
+		          while (i <= path.Ubound) and IsNumeric(path(i))
+		            penX = penX + Val(path(i + 2))
+		            penY = penY + Val(path(i + 3))
+		            i = i + 4
+		          wend
+		          
+		        elseif StrComp(path(i), "S", 0) = 0 then // absolute smooth curveto
+		          
+		          penX = Val(path(i + 3))
+		          penY = Val(path(i + 4))
+		          
+		          i = i + 5
+		          while (i <= path.Ubound) and IsNumeric(path(i))
+		            penX = Val(path(i + 2))
+		            penY = Val(path(i + 3))
+		            i = i + 4
+		          wend
+		          
+		        elseif StrComp(path(i), "s", 0) = 0 then // relative smooth curveto
+		          
+		          penX = penX + Val(path(i + 3))
+		          penY = penY + Val(path(i + 4))
+		          
+		          i = i + 5
+		          while (i <= path.Ubound) and IsNumeric(path(i))
+		            penX = penX + Val(path(i + 2))
+		            penY = penY + Val(path(i + 3))
+		            i = i + 4
+		          wend
+		          
+		        elseif StrComp(path(i), "T", 0) = 0 then // absolute  smooth quadratic Bézier curveto
+		          
+		          penX = Val(path(i + 1))
+		          penY = Val(path(i + 2))
+		          i = i + 5
+		          while (i <= path.Ubound) and IsNumeric(path(i))
+		            penX = Val(path(i))
+		            penY = Val(path(i + 1))
+		            i = i + 4
+		          wend
+		          
+		        elseif StrComp(path(i), "t", 0) = 0 then // relative  smooth quadratic Bézier curveto
+		          
+		          penX = penX + Val(path(i + 1))
+		          penY = penY + Val(path(i + 2))
+		          i = i + 3
+		          while (i <= path.Ubound) and IsNumeric(path(i))
+		            penX = penX + Val(path(i))
+		            penY = penY + Val(path(i + 1))
+		            i = i + 2
+		          wend
+		          
+		        elseif StrComp(path(i), "V", 0) = 0 then // absolute vertical lineto
+		          
+		          penY = Val(path(i + 1))
+		          
+		          i = i + 2
+		          while (i <= path.Ubound) and IsNumeric(path(i))
+		            penY = Val(path(i))
+		            i = i + 1
+		          wend
+		          
+		        elseif StrComp(path(i), "v", 0) = 0 then // relative vertical lineto
+		          
+		          penY = penY + Val(path(i + 1))
+		          
+		          i = i + 2
+		          while (i <= path.Ubound) and IsNumeric(path(i))
+		            penY = penY + Val(path(i))
+		            i = i + 1
+		          wend
+		          
+		        else
+		          
+		          i = i + 1
+		          
+		        end if
+		        
+		      wend
+		      if (i <= path.Ubound) and not relativeCommand then
+		        path.Insert i, "L"
+		        path.Insert i + 1, additionalPath(additionalPath.Ubound - 1)
+		        path.Insert i + 2, additionalPath(additionalPath.Ubound)
+		      end if
+		      i = i + 1
+		      
+		    case else 
+		      i = i + 1
+		      
+		    end select
+		    
+		  wend
+		  
+		  if additionalPath.Ubound > 4 then
+		    additionalPath.Append "z"
+		    if relativeCommand then
+		      additionalPath.Append "M"
+		      additionalPath.Append "0"
+		      additionalPath.Append "0"
+		    end if
+		    
+		    i = 0
+		    while i <= additionalPath.Ubound
+		      path.Insert(i, additionalPath(i))
+		      i = i + 1
+		    wend
+		  end if
+		  
+		  penX = 0
+		  penY = 0
+		  
+		  // draw path
+		  
+		  prevCCommand = false
+		  prevQCommand = false
+		  
+		  i = 0
+		  while i <= path.Ubound
+		    
+		    // absolute elliptical arc AND relative elliptical arc
+		    
+		    if (StrComp(path(i), "A", 0) = 0) or (StrComp(path(i), "a", 0) = 0) then 
+		      
+		      do
+		        
+		        x1 = penX
+		        y1 = penY
+		        i = i + 1
+		        rx = Val(path(i))
+		        i = i + 1
+		        ry = Val(path(i))
+		        i = i + 1
+		        theta = Val(path(i))
+		        i = i + 1
+		        flagA = Val(path(i))
+		        i = i + 1
+		        flagS = Val(path(i))
+		        
+		        if (StrComp(path(i), "A", 0) = 0) then
+		          i = i + 1
+		          x2 = Val(path(i))
+		          i = i + 1
+		          y2 = Val(path(i))
+		        else
+		          i = i + 1
+		          x2 = penX + Val(path(i))
+		          i = i + 1
+		          y2 = penY + Val(path(i))
+		        end if
+		        
+		        // correction of out-of-range radii
+		        
+		        'if (rx = 0) or (ry = 0) then
+		        'break // todo: treat arc as straight line from (x1, y1) to (x2, y2)
+		        'end if
+		        'rx = Abs(rx)
+		        'ry = Abs(ry)
+		        '
+		        radiScale = (x1Comp^2 / rx^2) + (y1Comp^2 / ry^2)
+		        'if radiScale > 1 then
+		        ';rx = Sqrt(radiScale) * rx
+		        'ry = Sqrt(radiScale) * ry
+		        'end if
+		        
+		        ' Given the following variables:
+		        ' x1, y1, x2, y2, fA, fS, rx, ry, theta
+		        ' we want to find:
+		        ' cx cy theta1 and thetaDelta
+		        
+		        // Step 1: Compute (x1', y1')
+		        
+		        x1Comp = cos(theta * DegToRad) * ((x1 - x2) / 2) +  sin(theta * DegToRad) * ((y1 - y2) / 2)
+		        y1Comp = -sin(theta * DegToRad) * ((x1 - x2) / 2) +  cos(theta * DegToRad) * ((y1 - y2) / 2)
+		        
+		        // Step 2: Compute(cx', cy')
+		        
+		        tmpDbl = (rx^2 * ry^2) - (rx^2 * y1Comp^2) - (ry^2 * x1Comp^2)
+		        tmpDbl = tmpDbl / ((rx^2 * y1Comp^2) + (ry^2 * x1Comp^2))
+		        tmpDbl = Sqrt(Abs(tmpDbl))
+		        
+		        if radiScale <= 1 then
+		          if flagA = flagS then
+		            tmpDbl = -tmpDbl
+		          end if
+		        end if
+		        
+		        cxComp = tmpDbl * (rx * y1Comp / ry)
+		        cyComp = tmpDbl * -(ry * x1Comp / rx)
+		        
+		        // Step 3: Compute (cx, cy) from (cx', cy')
+		        
+		        cx = (cos(theta * DegToRad) * cxComp - sin(theta * DegToRad) * cyComp) + ((x1 + x2) / 2)
+		        cy = (sin(theta * DegToRad) * cxComp + cos(theta * DegToRad) * cyComp) + ((y1 + y2) / 2)
+		        
+		        // Step 4: Compute theta1 and thetaDelta
+		        
+		        u = new REALbasic.Point(1, 0)
+		        v = new REALbasic.Point((x1Comp - cxComp) / rx, (y1Comp - cyComp) / ry)
+		        theta1 = angleBetweenVectors(u, v)
+		        
+		        u = new REALbasic.Point((x1Comp - cxComp) / rx, (y1Comp - cyComp) / ry)
+		        v = new REALbasic.Point((-x1Comp - cxComp) / rx, (-y1Comp - cyComp) / ry)
+		        thetaDelta = angleBetweenVectors(u, v)
+		        thetaDelta = thetaDelta mod 360
+		        
+		        if (flagS = 0) and (thetaDelta > 0) then
+		          thetaDelta = thetaDelta - 360
+		        elseif (flagS = 1) and (thetaDelta < 0) then
+		          thetaDelta = thetaDelta + 360
+		        end if
+		        
+		        // Build path using calculated values
+		        
+		        adjustValue = thetaDelta / Abs(thetaDelta)
+		        
+		        angleStep = (thetaDelta / 360) 
+		        
+		        currentAngle = theta1 + angleStep
+		        
+		        tmpMatrix = translationMatrix(0, 0) 
+		        
+		        if radiScale > 1 then
+		          rx = Sqrt(radiScale) * rx
+		          ry = Sqrt(radiScale) * ry
+		        end if
+		        
+		        tmpMatrix2 = translationMatrix(cx, cy)
+		        tmpMatrix = matrixMultiply(tmpMatrix, tmpMatrix2)
+		        tmpMatrix2 = rotationMatrix(theta)
+		        tmpMatrix = matrixMultiply(tmpMatrix, tmpMatrix2)
+		        tmpMatrix2 = translationMatrix(-cx, -cy)
+		        tmpMatrix = matrixMultiply(tmpMatrix, tmpMatrix2)
+		        
+		        // correction of out-of-range radii
+		        
+		        while currentAngle * adjustValue <= (theta1 + thetaDelta) * adjustValue
+		          cs = new CurveShape()
+		          //fs.Append cs
+		          break
+		          
+		          tmpX = penX
+		          tmpY = penY
+		          transformPoint tmpX, tmpY, matrix
+		          cs.X = tmpX
+		          cs.Y = tmpY
+		          
+		          tmpX = cx + rx  * cos(currentAngle * DegToRad) // center a + radius x * cos(theta) 
+		          tmpY = cy + ry * sin(currentAngle * DegToRad) // center b + radius y * sin(theta)
+		          
+		          transformPoint tmpX, tmpY, tmpMatrix
+		          penX = tmpX 
+		          penY = tmpY
+		          transformPoint tmpX, tmpY, matrix
+		          
+		          cs.X2 = tmpX
+		          cs.Y2 = tmpY
+		          
+		          currentAngle = currentAngle + angleStep
+		          
+		        wend 
+		        
+		        if (penX <> x2) or (penY <> y2) then
+		          cs = new CurveShape()
+		          //fs.Append cs
+		          break
+		          
+		          tmpX = penX
+		          tmpY = penY
+		          transformPoint tmpX, tmpY, matrix
+		          cs.X = tmpX
+		          cs.Y = tmpY
+		          
+		          tmpX = x2
+		          tmpY= y2
+		          penX = tmpX
+		          penY = tmpY
+		          transformPoint tmpX, tmpY, matrix
+		          cs.X2 = tmpX
+		          cs.Y2 = tmpY
+		        end if
+		        
+		        continueImplicit = false
+		        if i < path.Ubound then
+		          if IsNumeric(path(i + 1)) then
+		            continueImplicit = true
+		          end if
+		        end if
+		        
+		      loop until not continueImplicit
+		      
+		      prevCCommand = false
+		      prevQCommand = false
+		      
+		    elseif StrComp(path(i), "C", 0) = 0 then // absolute curveto
+		      do
+		        cs = new CurveShape
+		        //fs.Append cs
+		        //break
+		        tmpX = penX
+		        tmpY = penY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X = tmpX
+		        cs.Y = tmpY
+		        cs.Order = 2
+		        i = i + 1
+		        tmpX = Val(path(i))
+		        i = i + 1
+		        tmpY = Val(path(i))
+		        transformPoint tmpX, tmpY, matrix
+		        cs.ControlX(0) = tmpX
+		        cs.ControlY(0) = tmpY
+		        i = i + 1
+		        tmpX = Val(path(i))
+		        i = i + 1
+		        tmpY = Val(path(i))
+		        transformPoint tmpX, tmpY, matrix
+		        cs.ControlX(1) = tmpX
+		        cs.ControlY(1) = tmpY
+		        prevControlX = tmpX
+		        prevControlY = tmpY
+		        i = i + 1
+		        tmpX = Val(path(i))
+		        i = i + 1
+		        tmpY = Val(path(i))
+		        penX = tmpX
+		        penY = tmpY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X2 = tmpX
+		        cs.Y2 = tmpY
+		        
+		        shape.AddCurveToPoint cs.ControlX(0), cs.ControlY(0), cs.ControlX(1), cs.ControlY(1), cs.X2, cs.Y2
+		        
+		        continueImplicit = false
+		        if i < path.Ubound then
+		          if IsNumeric(path(i + 1)) then
+		            continueImplicit = true
+		          end if
+		        end if
+		        
+		      loop until not continueImplicit
+		      
+		      prevCCommand = true
+		      prevQCommand = false
+		      
+		    elseif StrComp(path(i), "c", 0) = 0 then // relative curveto
+		      do
+		        cs = new CurveShape
+		        //fs.Append cs
+		        break
+		        tmpX = penX
+		        tmpY = penY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X = tmpX
+		        cs.Y = tmpY
+		        cs.Order = 2
+		        i = i + 1
+		        tmpX = penX + Val(path(i))
+		        i = i + 1
+		        tmpY = penY + Val(path(i))
+		        transformPoint tmpX, tmpY, matrix
+		        cs.ControlX(0) = tmpX
+		        cs.ControlY(0) = tmpY
+		        i = i + 1
+		        tmpX = penX + Val(path(i))
+		        i = i + 1
+		        tmpY = penY + Val(path(i))
+		        transformPoint tmpX, tmpY, matrix
+		        cs.ControlX(1) = tmpX
+		        cs.ControlY(1) = tmpY
+		        prevControlX = tmpX
+		        prevControlY = tmpY
+		        i = i + 1
+		        tmpX = penX + Val(path(i))
+		        i = i + 1
+		        tmpY = penY + Val(path(i))
+		        penX = tmpX
+		        penY = tmpY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X2 = tmpX
+		        cs.Y2 = tmpY
+		        
+		        continueImplicit = false
+		        if i < path.Ubound then
+		          if IsNumeric(path(i + 1)) then
+		            continueImplicit = true
+		          end if
+		        end if
+		        
+		      loop until not continueImplicit
+		      
+		      prevCCommand = true
+		      prevQCommand = false
+		      
+		    elseif StrComp(path(i), "H", 0) = 0 then // absolute horizontal lineto
+		      do
+		        cs =new CurveShape
+		        //fs.Append cs
+		        break
+		        tmpX = penX
+		        tmpY = penY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X = tmpX
+		        cs.Y = tmpY
+		        i = i + 1
+		        tmpX = Val(path(i))
+		        penX = tmpX
+		        tmpY = penY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X2 = tmpX
+		        cs.Y2 = tmpY
+		        
+		        continueImplicit = false
+		        if i < path.Ubound then
+		          if IsNumeric(path(i + 1)) then
+		            continueImplicit = true
+		          end if
+		        end if
+		        
+		      loop until not continueImplicit
+		      
+		      prevCCommand = false
+		      prevQCommand = false
+		      
+		    elseif StrComp(path(i), "h", 0) = 0 then // relative horizontal lineto
+		      do
+		        cs =new CurveShape
+		        //fs.Append cs
+		        break
+		        tmpX = penX
+		        tmpY = penY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X = tmpX
+		        cs.Y = tmpY
+		        i = i + 1
+		        tmpX = penX + Val(path(i))
+		        penX = tmpX
+		        tmpY = penY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X2 = tmpX
+		        cs.Y2 = tmpY
+		        
+		        continueImplicit = false
+		        if i < path.Ubound then
+		          if IsNumeric(path(i + 1)) then
+		            continueImplicit = true
+		          end if
+		        end if
+		        
+		      loop until not continueImplicit
+		      
+		      prevCCommand = false
+		      prevQCommand = false
+		      
+		    elseif StrComp(path(i), "L", 0) = 0 then // absolute lineto
+		      
+		      do
+		        
+		        cs =new CurveShape
+		        //fs.Append cs
+		        //break
+		        tmpX = penX
+		        tmpY = penY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X = tmpX
+		        cs.Y = tmpY
+		        i = i + 1
+		        tmpX = Val(path(i))
+		        i = i + 1
+		        tmpY = Val(path(i))
+		        penX = tmpX
+		        penY = tmpY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X2 = tmpX
+		        cs.Y2 = tmpY
+		        
+		        shape.AddLineToPoint tmpX, tmpY
+		        
+		        continueImplicit = false
+		        if i < path.Ubound then
+		          if IsNumeric(path(i + 1)) then
+		            continueImplicit = true
+		          end if
+		        end if
+		        
+		      loop until not continueImplicit
+		      
+		      prevCCommand = false
+		      prevQCommand = false
+		      
+		    elseif StrComp(path(i), "l", 0) = 0 then // relative lineto
+		      
+		      do
+		        
+		        cs =new CurveShape
+		        //fs.Append cs
+		        break
+		        tmpX = penX
+		        tmpY = penY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X = tmpX
+		        cs.Y = tmpY
+		        i = i + 1
+		        tmpX = penX + Val(path(i))
+		        i = i + 1
+		        tmpY = penY + Val(path(i))
+		        penX = tmpX
+		        penY = tmpY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X2 = tmpX
+		        cs.Y2 = tmpY
+		        
+		        continueImplicit = false
+		        if i < path.Ubound then
+		          if IsNumeric(path(i + 1)) then
+		            continueImplicit = true
+		          end if
+		        end if
+		        
+		      loop until not continueImplicit
+		      
+		      prevCCommand = false
+		      prevQCommand = false
+		      
+		    elseif StrComp(path(i), "M", 0) = 0 then // absolute move
+		      //if (fs.Count > 0) and not prevclosed then
+		      ////drawPath g, fs, itemFill, itemFillColor, itemStroke, itemStrokeColor, strokeWidth, prevClosed
+		      //break
+		      //fs = new FigureShape()
+		      //end if
+		      ///break
+		      
+		      
+		      
+		      i = i + 1
+		      tmpX = Val(path(i))
+		      i = i + 1
+		      tmpY = Val(path(i))
+		      
+		      penX = tmpX
+		      penY = tmpY
+		      
+		      transformPoint tmpX, tmpY, matrix
+		      shape.MoveToPoint tmpX, tmpY
+		      
+		      // apply  implicit lineto commands
+		      
+		      do
+		        continueImplicit = false
+		        if i < (path.Ubound - 1) then
+		          if IsNumeric(path(i + 1)) then
+		            cs =new CurveShape
+		            //fs.Append cs
+		            //break
+		            tmpX = penX
+		            tmpY = penY
+		            transformPoint tmpX, tmpY, matrix
+		            cs.X = tmpX
+		            cs.Y = tmpY
+		            i = i + 1
+		            tmpX = Val(path(i))
+		            i = i + 1
+		            tmpY = Val(path(i))
+		            penX = tmpX
+		            penY = tmpY
+		            transformPoint tmpX, tmpY, matrix
+		            cs.X2 = tmpX
+		            cs.Y2 = tmpY
+		            
+		            shape.AddLineToPoint tmpX, tmpY
+		            
+		            continueImplicit = true
+		          end if
+		        end if
+		      loop until (i > path.Ubound) or not continueImplicit
+		      
+		      prevCCommand = false
+		      prevQCommand = false
+		      
+		    elseif StrComp(path(i), "m", 0) = 0 then // relative move
+		      
+		      //if (fs.Count > 0) and not prevClosed then
+		      ////drawPath g, fs, itemFill, itemFillColor, itemStroke, itemStrokeColor, strokeWidth, prevClosed
+		      //break
+		      //fs = new FigureShape()
+		      //end if
+		      break
+		      
+		      i = i + 1
+		      tmpX = Val(path(i))
+		      i = i + 1
+		      tmpY = Val(path(i))
+		      
+		      penX = penX + tmpX
+		      penY = penY + tmpY
+		      
+		      // apply  implicit lineto commands
+		      
+		      do
+		        continueImplicit = false
+		        if i < (path.Ubound - 1) then
+		          if IsNumeric(path(i + 1)) then
+		            cs =new CurveShape
+		            //fs.Append cs
+		            break
+		            tmpX = penX
+		            tmpY = penY
+		            transformPoint tmpX, tmpY, matrix
+		            cs.X = tmpX
+		            cs.Y = tmpY
+		            i = i + 1
+		            tmpX = Val(path(i))
+		            i = i + 1
+		            tmpY = Val(path(i))
+		            penX = penX + tmpX
+		            penY = penY +tmpY
+		            tmpX = penX
+		            tmpY = penY
+		            transformPoint tmpX, tmpY, matrix
+		            cs.X2 = tmpX
+		            cs.Y2 = tmpY
+		            continueImplicit = true
+		          end if
+		        end if
+		      loop until (i > path.Ubound) or not continueImplicit
+		      
+		      prevCCommand = false
+		      prevQCommand = false
+		      
+		    elseif StrComp(path(i), "Q", 0) = 0 then // absolute quadratic Bézier curveto
+		      do
+		        cs = new CurveShape
+		        //fs.Append cs
+		        break
+		        tmpX = penX
+		        tmpY = penY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X = tmpX
+		        cs.Y = tmpY
+		        cs.Order = 1
+		        i = i + 1
+		        tmpX = Val(path(i))
+		        i = i + 1
+		        tmpY = Val(path(i))
+		        transformPoint tmpX, tmpY, matrix
+		        cs.ControlX(0) = tmpX
+		        cs.ControlY(0) = tmpY
+		        prevControlX = tmpX
+		        prevControlY = tmpY
+		        i = i + 1
+		        tmpX = Val(path(i))
+		        i = i + 1
+		        tmpY = Val(path(i))
+		        penX = tmpX
+		        penY = tmpY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X2 = tmpX
+		        cs.Y2 = tmpY
+		        
+		        continueImplicit = false
+		        if i < path.Ubound then
+		          if IsNumeric(path(i + 1)) then
+		            continueImplicit = true
+		          end if
+		        end if
+		        
+		      loop until not continueImplicit
+		      
+		      prevCCommand = false
+		      prevQCommand = true
+		      
+		    elseif StrComp(path(i), "q", 0) = 0 then // relative quadratic Bézier curveto
+		      do
+		        cs = new CurveShape
+		        //fs.Append cs
+		        break
+		        tmpX = penX
+		        tmpY = penY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X = tmpX
+		        cs.Y = tmpY
+		        cs.Order = 1
+		        i = i + 1
+		        tmpX = penX + Val(path(i))
+		        i = i + 1
+		        tmpY = penY + Val(path(i))
+		        transformPoint tmpX, tmpY, matrix
+		        cs.ControlX(0) = tmpX
+		        cs.ControlY(0) = tmpY
+		        prevControlX = tmpX
+		        prevControlY = tmpY
+		        i = i + 1
+		        tmpX = penX + Val(path(i))
+		        i = i + 1
+		        tmpY = penY + Val(path(i))
+		        penX = tmpX
+		        penY = tmpY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X2 = tmpX
+		        cs.Y2 = tmpY
+		        
+		        continueImplicit = false
+		        if i < path.Ubound then
+		          if IsNumeric(path(i + 1)) then
+		            continueImplicit = true
+		          end if
+		        end if
+		        
+		      loop until not continueImplicit
+		      
+		      prevCCommand = false
+		      prevQCommand = true
+		      
+		    elseif StrComp(path(i), "S", 0) = 0 then // absolute smooth curveto
+		      
+		      do
+		        
+		        cs = new CurveShape
+		        //fs.Append cs
+		        //break
+		        tmpX = penX
+		        tmpY = penY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X = tmpX
+		        cs.Y = tmpY
+		        cs.Order = 2
+		        if prevCCommand then
+		          cs.ControlX(0) = (tmpX - prevControlX)  + tmpX
+		          cs.ControlY(0) = (tmpY - prevControlY)  + tmpY
+		        else
+		          cs.ControlX(0) = tmpX
+		          cs.ControlY(0) = tmpY
+		        end if
+		        i = i + 1
+		        tmpX = Val(path(i))
+		        i = i + 1
+		        tmpY = Val(path(i))
+		        transformPoint tmpX, tmpY, matrix
+		        cs.ControlX(1) = tmpX
+		        cs.ControlY(1) = tmpY
+		        prevControlX = tmpX
+		        prevControlY = tmpY
+		        i = i + 1
+		        tmpX = Val(path(i))
+		        i = i + 1
+		        tmpY = Val(path(i))
+		        penX = tmpX
+		        penY = tmpY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X2 = tmpX
+		        cs.Y2 = tmpY
+		        
+		        shape.AddCurveToPoint cs.ControlX(0), cs.ControlY(0), cs.ControlX(1), cs.ControlY(1), cs.X2, cs.Y2
+		        
+		        continueImplicit = false
+		        if i < path.Ubound then
+		          if IsNumeric(path(i + 1)) then
+		            continueImplicit = true
+		          end if
+		        end if
+		        
+		      loop until not continueImplicit
+		      
+		      prevCCommand = true
+		      prevQCommand = false
+		      
+		    elseif StrComp(path(i), "s", 0) = 0 then // relative smooth curveto
+		      
+		      do
+		        
+		        cs = new CurveShape
+		        //fs.Append cs
+		        break
+		        tmpX = penX
+		        tmpY = penY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X = tmpX
+		        cs.Y = tmpY
+		        cs.Order = 2
+		        if prevCCommand then
+		          cs.ControlX(0) = (tmpX - prevControlX)  + tmpX
+		          cs.ControlY(0) = (tmpY - prevControlY)  + tmpY
+		        else
+		          cs.ControlX(0) = tmpX
+		          cs.ControlY(0) = tmpY
+		        end if
+		        i = i + 1
+		        tmpX = penX + Val(path(i))
+		        i = i + 1
+		        tmpY = penY + Val(path(i))
+		        transformPoint tmpX, tmpY, matrix
+		        cs.ControlX(1) = tmpX
+		        cs.ControlY(1) = tmpY
+		        prevControlX = tmpX
+		        prevControlY = tmpY
+		        i = i + 1
+		        tmpX = penX + Val(path(i))
+		        i = i + 1
+		        tmpY = penY + Val(path(i))
+		        penX = tmpX
+		        penY = tmpY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X2 = tmpX
+		        cs.Y2 = tmpY
+		        
+		        continueImplicit = false
+		        if i < path.Ubound then
+		          if IsNumeric(path(i + 1)) then
+		            continueImplicit = true
+		          end if
+		        end if
+		        
+		      loop until not continueImplicit
+		      
+		      prevCCommand = true
+		      prevQCommand = false
+		      
+		    elseif StrComp(path(i), "T", 0) = 0 then // absolute smooth quadratic Bézier curveto
+		      do
+		        cs = new CurveShape
+		        //fs.Append cs
+		        break
+		        tmpX = penX
+		        tmpY = penY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X = tmpX
+		        cs.Y = tmpY
+		        cs.Order = 1
+		        if prevQCommand then
+		          cs.ControlX(0) = (tmpX - prevControlX)  + tmpX
+		          cs.ControlY(0) = (tmpY - prevControlY)  + tmpY
+		        else
+		          cs.ControlX(0) = tmpX
+		          cs.ControlY(0) = tmpY
+		        end if
+		        prevControlX = tmpX
+		        prevControlY = tmpY
+		        i = i + 1
+		        tmpX = Val(path(i))
+		        i = i + 1
+		        tmpY = Val(path(i))
+		        penX = tmpX
+		        penY = tmpY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X2 = tmpX
+		        cs.Y2 = tmpY
+		        
+		        continueImplicit = false
+		        if i < path.Ubound then
+		          if IsNumeric(path(i + 1)) then
+		            continueImplicit = true
+		          end if
+		        end if
+		        
+		      loop until not continueImplicit
+		      
+		      prevCCommand = false
+		      prevQCommand = true
+		      
+		    elseif StrComp(path(i), "t", 0) = 0 then // relative smooth quadratic Bézier curveto
+		      do
+		        cs = new CurveShape
+		        //fs.Append cs
+		        break
+		        tmpX = penX
+		        tmpY = penY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X = tmpX
+		        cs.Y = tmpY
+		        cs.Order = 1
+		        if prevQCommand then
+		          cs.ControlX(0) = (tmpX - prevControlX)  + tmpX
+		          cs.ControlY(0) = (tmpY - prevControlY)  + tmpY
+		        else
+		          cs.ControlX(0) = tmpX
+		          cs.ControlY(0) = tmpY
+		        end if
+		        prevControlX = tmpX
+		        prevControlY = tmpY
+		        i = i + 1
+		        tmpX = penX + Val(path(i))
+		        i = i + 1
+		        tmpY = penY + Val(path(i))
+		        penX = tmpX
+		        penY = tmpY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X2 = tmpX
+		        cs.Y2 = tmpY
+		        
+		        continueImplicit = false
+		        if i < path.Ubound then
+		          if IsNumeric(path(i + 1)) then
+		            continueImplicit = true
+		          end if
+		        end if
+		        
+		      loop until not continueImplicit
+		      
+		      prevCCommand = false
+		      prevQCommand = true
+		      
+		    elseif StrComp(path(i), "V", 0) = 0 then // absolute vertical lineto
+		      
+		      do
+		        
+		        cs =new CurveShape
+		        //fs.Append cs
+		        break
+		        tmpX = penX
+		        tmpY = penY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X = tmpX
+		        cs.Y = tmpY
+		        tmpX = penX
+		        i = i + 1
+		        tmpY = Val(path(i))
+		        penY = tmpY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X2 = tmpX
+		        cs.Y2 = tmpY
+		        
+		        continueImplicit = false
+		        if i < path.Ubound then
+		          if IsNumeric(path(i + 1)) then
+		            continueImplicit = true
+		          end if
+		        end if
+		        
+		      loop until not continueImplicit
+		      
+		      prevCCommand = false
+		      prevQCommand = false
+		      
+		    elseif StrComp(path(i), "v", 0) = 0 then // relative vertical lineto
+		      
+		      do
+		        
+		        cs =new CurveShape
+		        //fs.Append cs
+		        break
+		        tmpX = penX
+		        tmpY = penY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X = tmpX
+		        cs.Y = tmpY
+		        tmpX = penX
+		        i = i + 1
+		        tmpY = penY + Val(path(i))
+		        penY = tmpY
+		        transformPoint tmpX, tmpY, matrix
+		        cs.X2 = tmpX
+		        cs.Y2 = tmpY
+		        
+		        continueImplicit = false
+		        if i < path.Ubound then
+		          if IsNumeric(path(i + 1)) then
+		            continueImplicit = true
+		          end if
+		        end if
+		        
+		      loop until not continueImplicit
+		      
+		      prevCCommand = false
+		      prevQCommand = false
+		      
+		    elseif path(i) = "z" then // close path
+		      prevClosed = true
+		      
+		      prevCCommand = false
+		      prevQCommand = false
+		      
+		    else
+		      if IsNumeric(path(i)) then
+		        e = new SVG.SVGException()
+		        e.ErrorNumber = 1
+		        e.Message = "Expected path command: " + Str(path(i))
+		        Raise e
+		        i = path.Ubound
+		      end if
+		      
+		      prevCCommand = false
+		      
+		    end if
+		    
+		    if path(i) <> "z" then
+		      prevClosed = false
+		    end if
+		    
+		    i = i + 1
+		  wend
+		  
+		  //drawPath g, fs, itemFill, itemFillColor, itemStroke, itemStrokeColor, strokeWidth, prevClosed
+		  
+		  RenderPath g, shape, style, matrix(0), prevClosed, true, true
+		  
 		End Sub
 	#tag EndMethod
 
