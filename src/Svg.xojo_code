@@ -616,9 +616,9 @@ Protected Module SVG
 		  case "desc"
 		    // we ignore these tags
 		    
-		    //case "ellipse"
-		    //render_ellipse(node, g, parentMatrix, parentStyle)
-		    //
+		  case "ellipse"
+		    render_ellipse(node, g, parentMatrix, parentStyle)
+		    
 		    //case "g"
 		    //render_g(node, g, parentMatrix, parentStyle)
 		    //
@@ -928,9 +928,69 @@ Protected Module SVG
 		    i = 1 
 		    while i <= pointCount 
 		      theta = Pi * (i / (pointCount / 2))
-		      
 		      tmpX = cx + r * cos(theta) // center a + radius x * cos(theta)
 		      tmpY = cy + r * sin(theta) // center b + radius y * sin(theta)
+		      transformPoint tmpX, tmpY, matrix
+		      
+		      path.AddLineToPoint tmpX, tmpY
+		      
+		      i = i + 1
+		    wend
+		    
+		    RenderPath g, path, style, matrix
+		    
+		  end if
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub render_ellipse(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
+		  Var localStyle As JSONItem
+		  Dim style As JSONItem
+		  Dim matrix() As Double
+		  Dim i As Integer
+		  Dim tmpX As Double
+		  Dim tmpY As Double
+		  Dim cx As Double
+		  Dim cy As Double
+		  Dim rx As Double
+		  Dim ry As Double
+		  Dim pointCount As Integer
+		  Dim theta As Double
+		  Var path As GraphicsPath
+		  
+		  style = new JSONItem("{}")
+		  style.ApplyValues parentStyle
+		  localStyle = buildStyleItem(node)
+		  style.ApplyValues localStyle
+		  matrix = buildTransformationMatrix(localStyle.Lookup("transform", ""))
+		  matrix = matrixMultiply(parentMatrix, matrix)
+		  
+		  cx = style.LookupDouble("cx")
+		  cy = style.LookupDouble("cy")
+		  rx = style.LookupDouble("rx") - 2
+		  ry = style.LookupDouble("ry") - 2
+		  
+		  if (rx > 0) and (ry > 0) then
+		    
+		    // build path
+		    
+		    path = new GraphicsPath()
+		    
+		    pointCount = 128
+		    i = 0
+		    
+		    theta = Pi * (i / (pointCount / 2))
+		    tmpX = cx + rx * cos(theta) // center a + radius x * cos(theta)
+		    tmpY = cy + ry * sin(theta) // center b + radius y * sin(theta)
+		    transformPoint tmpX, tmpY, matrix
+		    path.MoveToPoint tmpX, tmpY
+		    
+		    while i <= pointCount 
+		      theta = Pi * (i / (pointCount / 2))
+		      tmpX = cx + rx * cos(theta) // center a + radius x * cos(theta)
+		      tmpY = cy + ry * sin(theta) // center b + radius y * sin(theta)
 		      transformPoint tmpX, tmpY, matrix
 		      
 		      path.AddLineToPoint tmpX, tmpY
