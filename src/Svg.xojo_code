@@ -1745,10 +1745,14 @@ Protected Module SVG
 		        
 		        // correction of out-of-range radii
 		        
+		        tmpX = penX
+		        tmpY = penY
+		        transformPoint tmpX, tmpY, matrix
+		        shape.MoveToPoint tmpX, tmpY
+		        
 		        while currentAngle * adjustValue <= (theta1 + thetaDelta) * adjustValue
 		          cs = new CurveShape()
 		          //fs.Append cs
-		          break
 		          
 		          tmpX = penX
 		          tmpY = penY
@@ -1767,6 +1771,8 @@ Protected Module SVG
 		          cs.X2 = tmpX
 		          cs.Y2 = tmpY
 		          
+		          shape.AddLineToPoint tmpX, tmpY
+		          
 		          currentAngle = currentAngle + angleStep
 		          
 		        wend 
@@ -1774,7 +1780,6 @@ Protected Module SVG
 		        if (penX <> x2) or (penY <> y2) then
 		          cs = new CurveShape()
 		          //fs.Append cs
-		          break
 		          
 		          tmpX = penX
 		          tmpY = penY
@@ -1789,6 +1794,9 @@ Protected Module SVG
 		          transformPoint tmpX, tmpY, matrix
 		          cs.X2 = tmpX
 		          cs.Y2 = tmpY
+		          
+		          shape.AddLineToPoint tmpX, tmpY
+		          
 		        end if
 		        
 		        continueImplicit = false
