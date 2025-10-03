@@ -2041,8 +2041,6 @@ Protected Module SVG
 		      //end if
 		      ///break
 		      
-		      
-		      
 		      i = i + 1
 		      tmpX = Val(path(i))
 		      i = i + 1
@@ -2095,7 +2093,6 @@ Protected Module SVG
 		      //break
 		      //fs = new FigureShape()
 		      //end if
-		      break
 		      
 		      i = i + 1
 		      tmpX = Val(path(i))
@@ -2105,6 +2102,12 @@ Protected Module SVG
 		      penX = penX + tmpX
 		      penY = penY + tmpY
 		      
+		      tmpX = penX
+		      tmpY = penY
+		      
+		      transformPoint tmpX, tmpY, matrix
+		      shape.MoveToPoint tmpX, tmpY
+		      
 		      // apply  implicit lineto commands
 		      
 		      do
@@ -2113,7 +2116,6 @@ Protected Module SVG
 		          if IsNumeric(path(i + 1)) then
 		            cs =new CurveShape
 		            //fs.Append cs
-		            break
 		            tmpX = penX
 		            tmpY = penY
 		            transformPoint tmpX, tmpY, matrix
@@ -2130,6 +2132,9 @@ Protected Module SVG
 		            transformPoint tmpX, tmpY, matrix
 		            cs.X2 = tmpX
 		            cs.Y2 = tmpY
+		            
+		            shape.AddLineToPoint tmpX, tmpY
+		            
 		            continueImplicit = true
 		          end if
 		        end if
