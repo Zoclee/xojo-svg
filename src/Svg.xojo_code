@@ -875,6 +875,7 @@ Protected Module SVG
 		  
 		  if fill <> "none" and doFill then
 		    g.DrawingColor = determineColor(fill)
+		    
 		    g.FillPath path, true
 		  end if
 		  
@@ -885,6 +886,7 @@ Protected Module SVG
 		    g.PenSize = strokeWidth
 		    g.LineCap = Graphics.LineCapTypes.Butt
 		    g.DrawPath path, closed
+		    
 		  end if
 		  
 		  
@@ -2158,7 +2160,7 @@ Protected Module SVG
 		      do
 		        cs = new CurveShape
 		        //fs.Append cs
-		        break
+		        //break
 		        tmpX = penX
 		        tmpY = penY
 		        transformPoint tmpX, tmpY, matrix
@@ -2183,6 +2185,8 @@ Protected Module SVG
 		        transformPoint tmpX, tmpY, matrix
 		        cs.X2 = tmpX
 		        cs.Y2 = tmpY
+		        
+		        shape.AddQuadraticCurveToPoint cs.ControlX(0), cs.ControlY(0), cs.X2, cs.Y2  
 		        
 		        continueImplicit = false
 		        if i < path.Ubound then
@@ -2348,7 +2352,7 @@ Protected Module SVG
 		      do
 		        cs = new CurveShape
 		        //fs.Append cs
-		        break
+		        //break
 		        tmpX = penX
 		        tmpY = penY
 		        transformPoint tmpX, tmpY, matrix
@@ -2373,6 +2377,8 @@ Protected Module SVG
 		        transformPoint tmpX, tmpY, matrix
 		        cs.X2 = tmpX
 		        cs.Y2 = tmpY
+		        
+		        shape.AddQuadraticCurveToPoint cs.ControlX(0), cs.ControlY(0), cs.X2, cs.Y2 
 		        
 		        continueImplicit = false
 		        if i < path.Ubound then
