@@ -543,6 +543,26 @@ Protected Module SVG
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
+		Private Function loadImage(data As String) As Picture
+		  Dim image As Picture
+		  Dim alphaImage As Picture
+		  Dim imageData As MemoryBlock
+		  Dim commaPos As Integer
+		  
+		  commaPos = Instr(0, data, ",")
+		  if commaPos > 0 then
+		    imageData = DecodeBase64(Right(data, Len(data) - commaPos))
+		    image = Picture.FromData(imageData)
+		    alphaImage = new Picture(image.Width, image.Height)
+		    alphaImage.Graphics.DrawPicture image, 0, 0
+		  end if
+		  
+		  return alphaImage
+		  
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
 		Private Function LookupDouble(Extends item As JSONItem, name As String, defaultValue As Double = 0) As Double
 		  return Item.Lookup(name, defaultValue)
 		  
@@ -724,9 +744,9 @@ Protected Module SVG
 		  case "g"
 		    render_g(node, g, parentMatrix, parentStyle)
 		    
-		    //case "image"
-		    //render_image(node, g, parentMatrix, parentStyle)
-		    //
+		  case "image"
+		    render_image(node, g, parentMatrix, parentStyle)
+		    
 		  case "line"
 		    render_line(node, g, parentMatrix, parentStyle)
 		    
@@ -1131,6 +1151,53 @@ Protected Module SVG
 		    renderNode node.Child(i), g, matrix, style
 		    i = i + 1
 		  wend
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub render_image(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
+		  
+		  Dim localStyle As JSONItem
+		  Dim style As JSONItem
+		  Dim matrix() As Double
+		  Dim mulMatrix() As Double
+		  Dim imageData As String
+		  Dim image As Picture
+		  Dim x As Double
+		  Dim y As Double
+		  Dim width As Double
+		  Dim height As Double
+		  
+		  style = new JSONItem("{}")
+		  style.ApplyValues parentStyle
+		  localStyle = buildStyleItem(node)
+		  style.ApplyValues localStyle
+		  matrix = buildTransformationMatrix(localStyle.Lookup("transform", ""))
+		  matrix = matrixMultiply(parentMatrix, matrix)
+		  
+		  x = style.LookupDouble("x")
+		  y = style.LookupDouble("y")
+		  width = style.LookupDouble("width")
+		  height = style.LookupDouble("height")
+		  
+		  imageData = node.GetAttribute("xlink:href")
+		  image = loadImage(imageData)
+		  
+		  if image <> nil then
+		    
+		    mulMatrix = initTranslationMatrix(x, y)
+		    matrix = matrixMultiply(matrix, mulMatrix)
+		    
+		    // to speed up rendering, we only use DrawTransformedPicture when needed
+		    
+		    if isTranslationMatrix(matrix) then
+		      g.DrawPicture image, matrix(2), matrix(5)
+		    else
+		      g.DrawTransformedPicture image, matrix
+		    end if
+		    
+		  end if
 		  
 		End Sub
 	#tag EndMethod
