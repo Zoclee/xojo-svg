@@ -2,9 +2,6 @@
 Protected Module SVG
 	#tag Method, Flags = &h21
 		Private Function angleBetweenVectors(u As REALbasic.Point, v As REALbasic.Point) As Double
-		  ' This project is a {Zoclee}™ open source initiative.
-		  ' www.zoclee.com
-		  
 		  Dim angle As Double
 		  
 		  angle = ACos( (u.X * v.X + u.Y * v.Y) / ( Sqrt(u.X^2 + u.Y^2) * Sqrt(v.X^2 + v.Y^2) ) )
@@ -474,6 +471,18 @@ Protected Module SVG
 		  1.0, 0.0, 0.0, _
 		  0.0, 1.0, 0.0, _
 		  0.0, 0.0, 1.0)
+		  
+		  return result
+		  
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function isTranslationMatrix(matrix() As Double) As Boolean
+		  Dim result As Boolean
+		  
+		  result = (matrix(0) = 1) and (matrix(1) = 0) and (matrix(3) = 0) and (matrix(4) = 1) and _
+		  (matrix(6) = 0) and (matrix(7) = 0) and (matrix(8) = 1)
 		  
 		  return result
 		  
@@ -1186,7 +1195,7 @@ Protected Module SVG
 		  
 		  if image <> nil then
 		    
-		    mulMatrix = initTranslationMatrix(x, y)
+		    mulMatrix = translationMatrix(x, y)
 		    matrix = matrixMultiply(matrix, mulMatrix)
 		    
 		    // to speed up rendering, we only use DrawTransformedPicture when needed
@@ -1834,7 +1843,7 @@ Protected Module SVG
 		          //cs.X2 = tmpX
 		          //cs.Y2 = tmpY
 		          
-		          shape.AddLineToPoint tmpX, tmpY
+		          shape.AddLineToPoint tmpX, tmpY 
 		          
 		          currentAngle = currentAngle + angleStep
 		          
@@ -1847,6 +1856,7 @@ Protected Module SVG
 		          //tmpX = penX
 		          //tmpY = penY
 		          //transformPoint tmpX, tmpY, matrix
+		          shape.AddLineToPoint tmpX, tmpY
 		          //cs.X = tmpX
 		          //cs.Y = tmpY
 		          
