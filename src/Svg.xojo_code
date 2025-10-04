@@ -2725,16 +2725,16 @@ Protected Module SVG
 		    path.MoveToPoint tmpX, tmpY
 		    
 		    tmpX = x
-		    tmpY = y + height - 1
+		    tmpY = y + height
 		    transformPoint tmpX, tmpY, matrix
 		    path.AddLineToPoint tmpX, tmpY
 		    
-		    tmpX = x + width - 1
-		    tmpY = y + height - 1
+		    tmpX = x + width 
+		    tmpY = y + height
 		    transformPoint tmpX, tmpY, matrix
 		    path.AddLineToPoint tmpX, tmpY
 		    
-		    tmpX = x + width - 1
+		    tmpX = x + width
 		    tmpY = y
 		    transformPoint tmpX, tmpY, matrix
 		    path.AddLineToPoint tmpX, tmpY
