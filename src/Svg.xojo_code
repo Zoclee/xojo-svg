@@ -831,7 +831,6 @@ Protected Module SVG
 		  
 		  if fill <> "none" and doFill then
 		    g.DrawingColor = determineColor(fill)
-		    
 		    g.FillPath path, true
 		  end if
 		  
@@ -842,7 +841,6 @@ Protected Module SVG
 		    g.PenSize = strokeWidth
 		    g.LineCap = Graphics.LineCapTypes.Butt
 		    g.DrawPath path, closed
-		    
 		  end if
 		  
 		  
