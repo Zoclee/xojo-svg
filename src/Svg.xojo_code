@@ -483,7 +483,6 @@ Protected Module SVG
 	#tag Method, Flags = &h21
 		Private Sub loadCSS(styleData As String)
 		  Var className As String
-		  Var nodeName As String
 		  Var i As Integer
 		  Var ch As String
 		  Var dataLen As Integer
@@ -1183,7 +1182,7 @@ Protected Module SVG
 		  Dim stroke As String
 		  Dim strokeWidth As Double
 		  //Dim fs as new FigureShape
-		  Dim cs As CurveShape
+		  //Dim cs As CurveShape
 		  Dim d As String
 		  Dim ch As String
 		  Dim penX As Double
@@ -1748,14 +1747,14 @@ Protected Module SVG
 		        // correction of out-of-range radii
 		        
 		        while currentAngle * adjustValue <= (theta1 + thetaDelta) * adjustValue
-		          cs = new CurveShape()
+		          //cs = new CurveShape()
 		          //fs.Append cs
 		          
-		          tmpX = penX
-		          tmpY = penY
-		          transformPoint tmpX, tmpY, matrix
-		          cs.X = tmpX
-		          cs.Y = tmpY
+		          //tmpX = penX
+		          //tmpY = penY
+		          //transformPoint tmpX, tmpY, matrix
+		          //cs.X = tmpX
+		          //cs.Y = tmpY
 		          
 		          tmpX = cx + rx  * cos(currentAngle * DegToRad) // center a + radius x * cos(theta) 
 		          tmpY = cy + ry * sin(currentAngle * DegToRad) // center b + radius y * sin(theta)
@@ -1765,8 +1764,8 @@ Protected Module SVG
 		          penY = tmpY
 		          transformPoint tmpX, tmpY, matrix
 		          
-		          cs.X2 = tmpX
-		          cs.Y2 = tmpY
+		          //cs.X2 = tmpX
+		          //cs.Y2 = tmpY
 		          
 		          shape.AddLineToPoint tmpX, tmpY
 		          
@@ -1775,22 +1774,22 @@ Protected Module SVG
 		        wend 
 		        
 		        if (penX <> x2) or (penY <> y2) then
-		          cs = new CurveShape()
+		          //cs = new CurveShape()
 		          //fs.Append cs
 		          
-		          tmpX = penX
-		          tmpY = penY
-		          transformPoint tmpX, tmpY, matrix
-		          cs.X = tmpX
-		          cs.Y = tmpY
+		          //tmpX = penX
+		          //tmpY = penY
+		          //transformPoint tmpX, tmpY, matrix
+		          //cs.X = tmpX
+		          //cs.Y = tmpY
 		          
 		          tmpX = x2
-		          tmpY= y2
+		          tmpY = y2
 		          penX = tmpX
 		          penY = tmpY
 		          transformPoint tmpX, tmpY, matrix
-		          cs.X2 = tmpX
-		          cs.Y2 = tmpY
+		          //cs.X2 = tmpX
+		          //cs.Y2 = tmpY
 		          
 		          shape.AddLineToPoint tmpX, tmpY
 		          
@@ -1810,30 +1809,34 @@ Protected Module SVG
 		      
 		    elseif StrComp(path(i), "C", 0) = 0 then // absolute curveto
 		      do
-		        cs = new CurveShape
+		        //cs = new CurveShape
 		        //fs.Append cs
 		        //break
-		        tmpX = penX
-		        tmpY = penY
-		        transformPoint tmpX, tmpY, matrix
-		        cs.X = tmpX
-		        cs.Y = tmpY
-		        cs.Order = 2
+		        //tmpX = penX
+		        //tmpY = penY
+		        //transformPoint tmpX, tmpY, matrix
+		        //cs.X = tmpX
+		        //cs.Y = tmpY
+		        //cs.Order = 2
 		        i = i + 1
 		        tmpX = Val(path(i))
 		        i = i + 1
 		        tmpY = Val(path(i))
 		        transformPoint tmpX, tmpY, matrix
-		        cs.ControlX(0) = tmpX
-		        cs.ControlY(0) = tmpY
+		        Var controlX1 As Double = tmpX
+		        Var controlY1 As Double = tmpY
+		        //cs.ControlX(0) = tmpX
+		        //cs.ControlY(0) = tmpY
 		        i = i + 1
 		        tmpX = Val(path(i))
 		        i = i + 1
 		        tmpY = Val(path(i))
 		        transformPoint tmpX, tmpY, matrix
-		        cs.ControlX(1) = tmpX
-		        cs.ControlY(1) = tmpY
-		        prevControlX = tmpX
+		        //cs.ControlX(1) = tmpX
+		        //cs.ControlY(1) = tmpY
+		        Var controlX2 As Double = tmpX
+		        Var controlY2 As Double = tmpY
+		        prevControlX = tmpX // TODO
 		        prevControlY = tmpY
 		        i = i + 1
 		        tmpX = Val(path(i))
@@ -1842,10 +1845,10 @@ Protected Module SVG
 		        penX = tmpX
 		        penY = tmpY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X2 = tmpX
-		        cs.Y2 = tmpY
+		        //cs.X2 = tmpX
+		        //cs.Y2 = tmpY
 		        
-		        shape.AddCurveToPoint cs.ControlX(0), cs.ControlY(0), cs.ControlX(1), cs.ControlY(1), cs.X2, cs.Y2
+		        shape.AddCurveToPoint controlX1, controlY1, controlX2, controlY2, tmpX, tmpY
 		        
 		        continueImplicit = false
 		        if i < path.Ubound then
@@ -1861,30 +1864,34 @@ Protected Module SVG
 		      
 		    elseif StrComp(path(i), "c", 0) = 0 then // relative curveto
 		      do
-		        cs = new CurveShape
+		        //cs = new CurveShape
 		        //fs.Append cs
 		        
-		        tmpX = penX
-		        tmpY = penY
-		        transformPoint tmpX, tmpY, matrix
-		        cs.X = tmpX
-		        cs.Y = tmpY
-		        cs.Order = 2
+		        //tmpX = penX
+		        //tmpY = penY
+		        //transformPoint tmpX, tmpY, matrix
+		        //cs.X = tmpX
+		        //cs.Y = tmpY
+		        //cs.Order = 2
 		        i = i + 1
 		        tmpX = penX + Val(path(i))
 		        i = i + 1
 		        tmpY = penY + Val(path(i))
 		        transformPoint tmpX, tmpY, matrix
-		        cs.ControlX(0) = tmpX
-		        cs.ControlY(0) = tmpY
+		        Var controlX1 As Double = tmpX
+		        Var controlY1 As Double = tmpY
+		        //cs.ControlX(0) = tmpX
+		        //cs.ControlY(0) = tmpY
 		        i = i + 1
 		        tmpX = penX + Val(path(i))
 		        i = i + 1
 		        tmpY = penY + Val(path(i))
 		        transformPoint tmpX, tmpY, matrix
-		        cs.ControlX(1) = tmpX
-		        cs.ControlY(1) = tmpY
-		        prevControlX = tmpX
+		        //cs.ControlX(1) = tmpX
+		        //cs.ControlY(1) = tmpY
+		        Var controlX2 As Double = tmpX
+		        Var controlY2 As Double = tmpY
+		        prevControlX = tmpX // TODO
 		        prevControlY = tmpY
 		        i = i + 1
 		        tmpX = penX + Val(path(i))
@@ -1893,10 +1900,10 @@ Protected Module SVG
 		        penX = tmpX
 		        penY = tmpY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X2 = tmpX
-		        cs.Y2 = tmpY
+		        //cs.X2 = tmpX
+		        //cs.Y2 = tmpY
 		        
-		        shape.AddCurveToPoint cs.ControlX(0), cs.ControlY(0), cs.ControlX(1), cs.ControlY(1), cs.X2, cs.Y2
+		        shape.AddCurveToPoint controlX1, controlY1, controlX2, controlY2, tmpX, tmpY
 		        
 		        continueImplicit = false
 		        if i < path.Ubound then
@@ -1912,21 +1919,21 @@ Protected Module SVG
 		      
 		    elseif StrComp(path(i), "H", 0) = 0 then // absolute horizontal lineto
 		      do
-		        cs =new CurveShape
+		        //cs = new CurveShape
 		        //fs.Append cs
 		        //break
-		        tmpX = penX
-		        tmpY = penY
-		        transformPoint tmpX, tmpY, matrix
-		        cs.X = tmpX
-		        cs.Y = tmpY
+		        //tmpX = penX
+		        //tmpY = penY
+		        //transformPoint tmpX, tmpY, matrix
+		        //cs.X = tmpX
+		        //cs.Y = tmpY
 		        i = i + 1
 		        tmpX = Val(path(i))
 		        penX = tmpX
 		        tmpY = penY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X2 = tmpX
-		        cs.Y2 = tmpY
+		        //cs.X2 = tmpX
+		        //cs.Y2 = tmpY
 		        
 		        shape.AddLineToPoint tmpX, tmpY
 		        
@@ -1944,21 +1951,21 @@ Protected Module SVG
 		      
 		    elseif StrComp(path(i), "h", 0) = 0 then // relative horizontal lineto
 		      do
-		        cs =new CurveShape
+		        //cs =new CurveShape
 		        //fs.Append cs
 		        //break
-		        tmpX = penX
-		        tmpY = penY
-		        transformPoint tmpX, tmpY, matrix
-		        cs.X = tmpX
-		        cs.Y = tmpY
+		        //tmpX = penX
+		        //tmpY = penY
+		        //transformPoint tmpX, tmpY, matrix
+		        //cs.X = tmpX
+		        //cs.Y = tmpY
 		        i = i + 1
 		        tmpX = penX + Val(path(i))
 		        penX = tmpX
 		        tmpY = penY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X2 = tmpX
-		        cs.Y2 = tmpY
+		        //cs.X2 = tmpX
+		        //cs.Y2 = tmpY
 		        
 		        shape.AddLineToPoint tmpX, tmpY
 		        
@@ -1978,14 +1985,14 @@ Protected Module SVG
 		      
 		      do
 		        
-		        cs =new CurveShape
+		        //cs =new CurveShape
 		        //fs.Append cs
 		        //break
-		        tmpX = penX
-		        tmpY = penY
-		        transformPoint tmpX, tmpY, matrix
-		        cs.X = tmpX
-		        cs.Y = tmpY
+		        //tmpX = penX
+		        //tmpY = penY
+		        //transformPoint tmpX, tmpY, matrix
+		        //cs.X = tmpX
+		        //cs.Y = tmpY
 		        i = i + 1
 		        tmpX = Val(path(i))
 		        i = i + 1
@@ -1993,8 +2000,8 @@ Protected Module SVG
 		        penX = tmpX
 		        penY = tmpY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X2 = tmpX
-		        cs.Y2 = tmpY
+		        //cs.X2 = tmpX
+		        //cs.Y2 = tmpY
 		        
 		        shape.AddLineToPoint tmpX, tmpY
 		        
@@ -2014,14 +2021,14 @@ Protected Module SVG
 		      
 		      do
 		        
-		        cs =new CurveShape
+		        //cs =new CurveShape
 		        //fs.Append cs
 		        
-		        tmpX = penX
-		        tmpY = penY
-		        transformPoint tmpX, tmpY, matrix
-		        cs.X = tmpX
-		        cs.Y = tmpY
+		        //tmpX = penX
+		        //tmpY = penY
+		        //transformPoint tmpX, tmpY, matrix
+		        //cs.X = tmpX
+		        //cs.Y = tmpY
 		        i = i + 1
 		        tmpX = penX + Val(path(i))
 		        i = i + 1
@@ -2029,8 +2036,8 @@ Protected Module SVG
 		        penX = tmpX
 		        penY = tmpY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X2 = tmpX
-		        cs.Y2 = tmpY
+		        //cs.X2 = tmpX
+		        //cs.Y2 = tmpY
 		        
 		        shape.AddLineToPoint tmpX, tmpY
 		        
@@ -2071,14 +2078,14 @@ Protected Module SVG
 		        continueImplicit = false
 		        if i < (path.Ubound - 1) then
 		          if IsNumeric(path(i + 1)) then
-		            cs =new CurveShape
+		            //cs = new CurveShape
 		            //fs.Append cs
 		            //break
-		            tmpX = penX
-		            tmpY = penY
-		            transformPoint tmpX, tmpY, matrix
-		            cs.X = tmpX
-		            cs.Y = tmpY
+		            //tmpX = penX
+		            //tmpY = penY
+		            //transformPoint tmpX, tmpY, matrix
+		            //cs.X = tmpX
+		            //cs.Y = tmpY
 		            i = i + 1
 		            tmpX = Val(path(i))
 		            i = i + 1
@@ -2086,8 +2093,8 @@ Protected Module SVG
 		            penX = tmpX
 		            penY = tmpY
 		            transformPoint tmpX, tmpY, matrix
-		            cs.X2 = tmpX
-		            cs.Y2 = tmpY
+		            //cs.X2 = tmpX
+		            //cs.Y2 = tmpY
 		            
 		            shape.AddLineToPoint tmpX, tmpY
 		            
@@ -2127,24 +2134,24 @@ Protected Module SVG
 		        continueImplicit = false
 		        if i < (path.Ubound - 1) then
 		          if IsNumeric(path(i + 1)) then
-		            cs =new CurveShape
+		            //cs =new CurveShape
 		            //fs.Append cs
-		            tmpX = penX
-		            tmpY = penY
-		            transformPoint tmpX, tmpY, matrix
-		            cs.X = tmpX
-		            cs.Y = tmpY
+		            //tmpX = penX
+		            //tmpY = penY
+		            //transformPoint tmpX, tmpY, matrix
+		            //cs.X = tmpX
+		            //cs.Y = tmpY
 		            i = i + 1
 		            tmpX = Val(path(i))
 		            i = i + 1
 		            tmpY = Val(path(i))
 		            penX = penX + tmpX
-		            penY = penY +tmpY
+		            penY = penY + tmpY
 		            tmpX = penX
 		            tmpY = penY
 		            transformPoint tmpX, tmpY, matrix
-		            cs.X2 = tmpX
-		            cs.Y2 = tmpY
+		            //cs.X2 = tmpX
+		            //cs.Y2 = tmpY
 		            
 		            shape.AddLineToPoint tmpX, tmpY
 		            
@@ -2158,23 +2165,25 @@ Protected Module SVG
 		      
 		    elseif StrComp(path(i), "Q", 0) = 0 then // absolute quadratic Bézier curveto
 		      do
-		        cs = new CurveShape
+		        //cs = new CurveShape
 		        //fs.Append cs
 		        //break
-		        tmpX = penX
-		        tmpY = penY
-		        transformPoint tmpX, tmpY, matrix
-		        cs.X = tmpX
-		        cs.Y = tmpY
-		        cs.Order = 1
+		        //tmpX = penX
+		        //tmpY = penY
+		        //transformPoint tmpX, tmpY, matrix
+		        //cs.X = tmpX
+		        //cs.Y = tmpY
+		        //cs.Order = 1
 		        i = i + 1
 		        tmpX = Val(path(i))
 		        i = i + 1
 		        tmpY = Val(path(i))
 		        transformPoint tmpX, tmpY, matrix
-		        cs.ControlX(0) = tmpX
-		        cs.ControlY(0) = tmpY
-		        prevControlX = tmpX
+		        //cs.ControlX(0) = tmpX
+		        //cs.ControlY(0) = tmpY
+		        Var control1X As Double = tmpX
+		        Var control1Y As Double = tmpY
+		        prevControlX = tmpX // TODO
 		        prevControlY = tmpY
 		        i = i + 1
 		        tmpX = Val(path(i))
@@ -2183,10 +2192,10 @@ Protected Module SVG
 		        penX = tmpX
 		        penY = tmpY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X2 = tmpX
-		        cs.Y2 = tmpY
+		        //cs.X2 = tmpX
+		        //cs.Y2 = tmpY
 		        
-		        shape.AddQuadraticCurveToPoint cs.ControlX(0), cs.ControlY(0), cs.X2, cs.Y2  
+		        shape.AddQuadraticCurveToPoint control1X, control1Y, tmpX, tmpY
 		        
 		        continueImplicit = false
 		        if i < path.Ubound then
@@ -2202,22 +2211,22 @@ Protected Module SVG
 		      
 		    elseif StrComp(path(i), "q", 0) = 0 then // relative quadratic Bézier curveto
 		      do
-		        cs = new CurveShape
+		        //cs = new CurveShape
 		        //fs.Append cs
 		        break
 		        tmpX = penX
 		        tmpY = penY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X = tmpX
-		        cs.Y = tmpY
-		        cs.Order = 1
+		        //cs.X = tmpX
+		        //cs.Y = tmpY
+		        //cs.Order = 1
 		        i = i + 1
 		        tmpX = penX + Val(path(i))
 		        i = i + 1
 		        tmpY = penY + Val(path(i))
 		        transformPoint tmpX, tmpY, matrix
-		        cs.ControlX(0) = tmpX
-		        cs.ControlY(0) = tmpY
+		        //cs.ControlX(0) = tmpX
+		        //cs.ControlY(0) = tmpY
 		        prevControlX = tmpX
 		        prevControlY = tmpY
 		        i = i + 1
@@ -2227,8 +2236,10 @@ Protected Module SVG
 		        penX = tmpX
 		        penY = tmpY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X2 = tmpX
-		        cs.Y2 = tmpY
+		        //cs.X2 = tmpX
+		        //cs.Y2 = tmpY
+		        
+		        // TODO: draw shape
 		        
 		        continueImplicit = false
 		        if i < path.Ubound then
@@ -2246,29 +2257,37 @@ Protected Module SVG
 		      
 		      do
 		        
-		        cs = new CurveShape
+		        //cs = new CurveShape
 		        //fs.Append cs
 		        //break
 		        tmpX = penX
 		        tmpY = penY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X = tmpX
-		        cs.Y = tmpY
-		        cs.Order = 2
+		        //cs.X = tmpX
+		        //cs.Y = tmpY
+		        //cs.Order = 2
+		        Var controlX1 As Double
+		        Var controlY1 As Double
 		        if prevCCommand then
-		          cs.ControlX(0) = (tmpX - prevControlX)  + tmpX
-		          cs.ControlY(0) = (tmpY - prevControlY)  + tmpY
+		          //cs.ControlX(0) = (tmpX - prevControlX) + tmpX
+		          //cs.ControlY(0) = (tmpY - prevControlY) + tmpY
+		          controlX1 = (tmpX - prevControlX) + tmpX
+		          controlY1 = (tmpY - prevControlY) + tmpY
 		        else
-		          cs.ControlX(0) = tmpX
-		          cs.ControlY(0) = tmpY
+		          //cs.ControlX(0) = tmpX
+		          //cs.ControlY(0) = tmpY
+		          controlX1 = tmpX
+		          controlY1 = tmpY
 		        end if
 		        i = i + 1
 		        tmpX = Val(path(i))
 		        i = i + 1
 		        tmpY = Val(path(i))
 		        transformPoint tmpX, tmpY, matrix
-		        cs.ControlX(1) = tmpX
-		        cs.ControlY(1) = tmpY
+		        //cs.ControlX(1) = tmpX
+		        //cs.ControlY(1) = tmpY
+		        Var controlX2 As Double = tmpX
+		        Var controlY2 As Double = tmpY
 		        prevControlX = tmpX
 		        prevControlY = tmpY
 		        i = i + 1
@@ -2278,10 +2297,10 @@ Protected Module SVG
 		        penX = tmpX
 		        penY = tmpY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X2 = tmpX
-		        cs.Y2 = tmpY
+		        //cs.X2 = tmpX
+		        //cs.Y2 = tmpY
 		        
-		        shape.AddCurveToPoint cs.ControlX(0), cs.ControlY(0), cs.ControlX(1), cs.ControlY(1), cs.X2, cs.Y2
+		        shape.AddCurveToPoint controlX1, controlY1, controlX2, controlY2, tmpX, tmpY
 		        
 		        continueImplicit = false
 		        if i < path.Ubound then
@@ -2299,29 +2318,37 @@ Protected Module SVG
 		      
 		      do
 		        
-		        cs = new CurveShape
+		        //cs = new CurveShape
 		        //fs.Append cs
 		        //break
 		        tmpX = penX
 		        tmpY = penY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X = tmpX
-		        cs.Y = tmpY
-		        cs.Order = 2
+		        //cs.X = tmpX
+		        //cs.Y = tmpY
+		        //cs.Order = 2
+		        Var controlX1 As Double
+		        Var controlY1 As Double
 		        if prevCCommand then
-		          cs.ControlX(0) = (tmpX - prevControlX)  + tmpX
-		          cs.ControlY(0) = (tmpY - prevControlY)  + tmpY
+		          //cs.ControlX(0) = (tmpX - prevControlX) + tmpX
+		          //cs.ControlY(0) = (tmpY - prevControlY) + tmpY
+		          controlX1 = (tmpX - prevControlX) + tmpX
+		          controlY1 = (tmpY - prevControlY) + tmpY
 		        else
-		          cs.ControlX(0) = tmpX
-		          cs.ControlY(0) = tmpY
+		          //cs.ControlX(0) = tmpX
+		          //cs.ControlY(0) = tmpY
+		          controlX1 = tmpX
+		          controlY1 = tmpY
 		        end if
 		        i = i + 1
 		        tmpX = penX + Val(path(i))
 		        i = i + 1
 		        tmpY = penY + Val(path(i))
 		        transformPoint tmpX, tmpY, matrix
-		        cs.ControlX(1) = tmpX
-		        cs.ControlY(1) = tmpY
+		        //cs.ControlX(1) = tmpX
+		        //cs.ControlY(1) = tmpY
+		        Var controlX2 As Double = tmpX
+		        Var controlY2 As Double = tmpY
 		        prevControlX = tmpX
 		        prevControlY = tmpY
 		        i = i + 1
@@ -2331,10 +2358,10 @@ Protected Module SVG
 		        penX = tmpX
 		        penY = tmpY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X2 = tmpX
-		        cs.Y2 = tmpY
+		        //cs.X2 = tmpX
+		        //cs.Y2 = tmpY
 		        
-		        shape.AddCurveToPoint cs.ControlX(0), cs.ControlY(0), cs.ControlX(1), cs.ControlY(1), cs.X2, cs.Y2
+		        shape.AddCurveToPoint controlX1, controlY1, controlX2, controlY2, tmpX, tmpY
 		        
 		        continueImplicit = false
 		        if i < path.Ubound then
@@ -2350,21 +2377,27 @@ Protected Module SVG
 		      
 		    elseif StrComp(path(i), "T", 0) = 0 then // absolute smooth quadratic Bézier curveto
 		      do
-		        cs = new CurveShape
+		        //cs = new CurveShape
 		        //fs.Append cs
 		        //break
 		        tmpX = penX
 		        tmpY = penY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X = tmpX
-		        cs.Y = tmpY
-		        cs.Order = 1
+		        //cs.X = tmpX
+		        //cs.Y = tmpY
+		        //cs.Order = 1
+		        Var controlX1 As Double
+		        Var controlY1 As Double
 		        if prevQCommand then
-		          cs.ControlX(0) = (tmpX - prevControlX)  + tmpX
-		          cs.ControlY(0) = (tmpY - prevControlY)  + tmpY
+		          //cs.ControlX(0) = (tmpX - prevControlX)  + tmpX
+		          //cs.ControlY(0) = (tmpY - prevControlY)  + tmpY
+		          controlX1 = (tmpX - prevControlX) + tmpX
+		          controlY1 = (tmpY - prevControlY) + tmpY
 		        else
-		          cs.ControlX(0) = tmpX
-		          cs.ControlY(0) = tmpY
+		          //cs.ControlX(0) = tmpX
+		          //cs.ControlY(0) = tmpY
+		          controlX1 = tmpX
+		          controlY1 = tmpY
 		        end if
 		        prevControlX = tmpX
 		        prevControlY = tmpY
@@ -2375,10 +2408,10 @@ Protected Module SVG
 		        penX = tmpX
 		        penY = tmpY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X2 = tmpX
-		        cs.Y2 = tmpY
+		        //cs.X2 = tmpX
+		        //cs.Y2 = tmpY
 		        
-		        shape.AddQuadraticCurveToPoint cs.ControlX(0), cs.ControlY(0), cs.X2, cs.Y2 
+		        shape.AddQuadraticCurveToPoint controlX1, controlY1, tmpX, tmpY
 		        
 		        continueImplicit = false
 		        if i < path.Ubound then
@@ -2394,21 +2427,21 @@ Protected Module SVG
 		      
 		    elseif StrComp(path(i), "t", 0) = 0 then // relative smooth quadratic Bézier curveto
 		      do
-		        cs = new CurveShape
+		        //cs = new CurveShape
 		        //fs.Append cs
 		        break
 		        tmpX = penX
 		        tmpY = penY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X = tmpX
-		        cs.Y = tmpY
-		        cs.Order = 1
+		        //cs.X = tmpX
+		        //cs.Y = tmpY
+		        //cs.Order = 1
 		        if prevQCommand then
-		          cs.ControlX(0) = (tmpX - prevControlX)  + tmpX
-		          cs.ControlY(0) = (tmpY - prevControlY)  + tmpY
+		          //cs.ControlX(0) = (tmpX - prevControlX)  + tmpX
+		          //cs.ControlY(0) = (tmpY - prevControlY)  + tmpY
 		        else
-		          cs.ControlX(0) = tmpX
-		          cs.ControlY(0) = tmpY
+		          //cs.ControlX(0) = tmpX
+		          //cs.ControlY(0) = tmpY
 		        end if
 		        prevControlX = tmpX
 		        prevControlY = tmpY
@@ -2419,8 +2452,8 @@ Protected Module SVG
 		        penX = tmpX
 		        penY = tmpY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X2 = tmpX
-		        cs.Y2 = tmpY
+		        //cs.X2 = tmpX
+		        //cs.Y2 = tmpY
 		        
 		        continueImplicit = false
 		        if i < path.Ubound then
@@ -2438,22 +2471,22 @@ Protected Module SVG
 		      
 		      do
 		        
-		        cs =new CurveShape
+		        //cs =new CurveShape
 		        //fs.Append cs
 		        //break
 		        
-		        tmpX = penX
-		        tmpY = penY
-		        transformPoint tmpX, tmpY, matrix
-		        cs.X = tmpX
-		        cs.Y = tmpY
+		        //tmpX = penX
+		        //tmpY = penY
+		        //transformPoint tmpX, tmpY, matrix
+		        //cs.X = tmpX
+		        //cs.Y = tmpY
 		        tmpX = penX
 		        i = i + 1
 		        tmpY = Val(path(i))
 		        penY = tmpY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X2 = tmpX
-		        cs.Y2 = tmpY
+		        //cs.X2 = tmpX
+		        //cs.Y2 = tmpY
 		        
 		        shape.AddLineToPoint tmpX, tmpY
 		        
@@ -2473,22 +2506,22 @@ Protected Module SVG
 		      
 		      do
 		        
-		        cs =new CurveShape
+		        //cs =new CurveShape
 		        //fs.Append cs
 		        //break
 		        
-		        tmpX = penX
-		        tmpY = penY
-		        transformPoint tmpX, tmpY, matrix
-		        cs.X = tmpX
-		        cs.Y = tmpY
+		        //tmpX = penX
+		        //tmpY = penY
+		        //transformPoint tmpX, tmpY, matrix
+		        //cs.X = tmpX
+		        //cs.Y = tmpY
 		        tmpX = penX
 		        i = i + 1
 		        tmpY = penY + Val(path(i))
 		        penY = tmpY
 		        transformPoint tmpX, tmpY, matrix
-		        cs.X2 = tmpX
-		        cs.Y2 = tmpY
+		        //cs.X2 = tmpX
+		        //cs.Y2 = tmpY
 		        
 		        shape.AddLineToPoint tmpX, tmpY
 		        
