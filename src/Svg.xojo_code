@@ -811,17 +811,18 @@ Protected Module SVG
 	#tag Method, Flags = &h21
 		Private Sub RenderPath(g As Graphics, path As GraphicsPath, style As JSONItem, scale As Double, closed As Boolean, doFill As Boolean, doStroke As Boolean)
 		  Var fill As String
+		  Var fillOpacity As Double
 		  Var stroke As String
 		  Var strokeWidth As Double
+		  Var drawColor As Color
 		  
 		  fill = style.LookupString("fill", "#000000")
+		  fillOpacity = 1
 		  if (fill <> "none") and style.HasName("fill-opacity") then
 		    if Val(style.Value("fill-opacity")) = 0 then
 		      fill = "none"
-		    elseif Val(style.Value("fill-opacity")) = 1 then
-		      // do nothing
 		    else
-		      'break // todo
+		      fillOpacity = Val(style.Value("fill-opacity"))
 		    end if
 		  end if
 		  stroke = style.LookupString("stroke", "")
@@ -830,7 +831,9 @@ Protected Module SVG
 		  // fill
 		  
 		  if fill <> "none" and doFill then
-		    g.DrawingColor = determineColor(fill)
+		    drawColor = determineColor(fill)
+		    drawColor = RGB(drawColor.Red, drawColor.Green, drawColor.Blue, (1 - fillOpacity) * 255)
+		    g.DrawingColor = drawColor
 		    g.FillPath path, true
 		  end if
 		  
@@ -1031,8 +1034,8 @@ Protected Module SVG
 		  
 		  cx = style.LookupDouble("cx")
 		  cy = style.LookupDouble("cy")
-		  rx = style.LookupDouble("rx") - 2
-		  ry = style.LookupDouble("ry") - 2
+		  rx = style.LookupDouble("rx")
+		  ry = style.LookupDouble("ry")
 		  
 		  if (rx > 0) and (ry > 0) then
 		    

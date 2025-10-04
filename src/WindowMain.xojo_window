@@ -46,7 +46,7 @@ Begin DesktopWindow WindowMain
       TabStop         =   True
       Tooltip         =   ""
       Top             =   59
-      Transparent     =   False
+      Transparent     =   True
       Visible         =   True
       Width           =   600
    End
