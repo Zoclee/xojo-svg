@@ -1,20 +1,28 @@
 #tag Module
 Protected Module SVG
 	#tag Method, Flags = &h21
-		Private Function angleBetweenVectors(u As REALbasic.Point, v As REALbasic.Point) As Double
-		  Dim angle As Double
+		Private Function angleBetweenVectors(ux As Double, uy As Double, vx As Double, vy As Double) As Double
+		  // Angle of vector V from the positive X-axis
+		  Dim angleV As Double
+		  angleV = Atan2(vy, vx) * (180 / Acos(-1)) // Convert Radians to Degrees
 		  
-		  angle = ACos( (u.X * v.X + u.Y * v.Y) / ( Sqrt(u.X^2 + u.Y^2) * Sqrt(v.X^2 + v.Y^2) ) )
+		  // Angle of vector U from the positive X-axis
+		  Dim angleU As Double
+		  angleU = Atan2(uy, ux) * (180 / Acos(-1)) // Convert Radians to Degrees
 		  
-		  if (u.x * v.y - u.y * v.x) < 0 then
-		    angle = -Abs(angle)
-		  else
-		    angle = Abs(angle)
+		  // Calculate the difference
+		  Dim angleDelta As Double = angleV - angleU
+		  
+		  // Normalize the angle to be within [0, 360) degrees
+		  // Use Modulo operator for normalization
+		  angleDelta = angleDelta Mod 360
+		  
+		  // If the result is negative, normalize it back to positive [0, 360)
+		  if angleDelta < 0 then
+		    angleDelta = angleDelta + 360
 		  end if
 		  
-		  angle = angle * RadToDeg
-		  
-		  return angle
+		  Return angleDelta
 		  
 		End Function
 	#tag EndMethod
@@ -1639,6 +1647,14 @@ Protected Module SVG
 		    
 		    if (StrComp(path(i), "A", 0) = 0) or (StrComp(path(i), "a", 0) = 0) then 
 		      
+		      Var isAbsolute As Boolean
+		      if StrComp(path(i), "A", 0) = 0 then
+		        isAbsolute = true
+		      else
+		        isAbsolute = false
+		      end if
+		      
+		      
 		      do
 		        
 		        x1 = penX
@@ -1654,7 +1670,7 @@ Protected Module SVG
 		        i = i + 1
 		        flagS = Val(path(i))
 		        
-		        if (StrComp(path(i), "A", 0) = 0) then
+		        if isAbsolute then
 		          i = i + 1
 		          x2 = Val(path(i))
 		          i = i + 1
@@ -1666,40 +1682,31 @@ Protected Module SVG
 		          y2 = penY + Val(path(i))
 		        end if
 		        
-		        // correction of out-of-range radii
-		        
-		        'if (rx = 0) or (ry = 0) then
-		        'break // todo: treat arc as straight line from (x1, y1) to (x2, y2)
-		        'end if
-		        'rx = Abs(rx)
-		        'ry = Abs(ry)
-		        '
-		        radiScale = (x1Comp^2 / rx^2) + (y1Comp^2 / ry^2)
-		        'if radiScale > 1 then
-		        ';rx = Sqrt(radiScale) * rx
-		        'ry = Sqrt(radiScale) * ry
-		        'end if
-		        
-		        ' Given the following variables:
-		        ' x1, y1, x2, y2, fA, fS, rx, ry, theta
-		        ' we want to find:
-		        ' cx cy theta1 and thetaDelta
-		        
 		        // Step 1: Compute (x1', y1')
 		        
 		        x1Comp = cos(theta * DegToRad) * ((x1 - x2) / 2) +  sin(theta * DegToRad) * ((y1 - y2) / 2)
 		        y1Comp = -sin(theta * DegToRad) * ((x1 - x2) / 2) +  cos(theta * DegToRad) * ((y1 - y2) / 2)
 		        
+		        // correction of out-of-range radii
+		        
+		        radiScale = (x1Comp^2 / rx^2) + (y1Comp^2 / ry^2)
+		        if radiScale > 1 then
+		          rx = Sqrt(radiScale) * rx
+		          ry = Sqrt(radiScale) * ry
+		        end if
+		        
 		        // Step 2: Compute(cx', cy')
 		        
 		        tmpDbl = (rx^2 * ry^2) - (rx^2 * y1Comp^2) - (ry^2 * x1Comp^2)
 		        tmpDbl = tmpDbl / ((rx^2 * y1Comp^2) + (ry^2 * x1Comp^2))
-		        tmpDbl = Sqrt(Abs(tmpDbl))
+		        if tmpDbl < 0 then
+		          tmpDbl = 0
+		        end if
+		        tmpDbl = Sqrt(tmpDbl)
+		        //tmpDbl = Sqrt(Abs(tmpDbl))
 		        
-		        if radiScale <= 1 then
-		          if flagA = flagS then
-		            tmpDbl = -tmpDbl
-		          end if
+		        if flagA = flagS then
+		          tmpDbl = -tmpDbl
 		        end if
 		        
 		        cxComp = tmpDbl * (rx * y1Comp / ry)
@@ -1712,13 +1719,22 @@ Protected Module SVG
 		        
 		        // Step 4: Compute theta1 and thetaDelta
 		        
-		        u = new REALbasic.Point(1, 0)
-		        v = new REALbasic.Point((x1Comp - cxComp) / rx, (y1Comp - cyComp) / ry)
-		        theta1 = angleBetweenVectors(u, v)
+		        //u = new REALbasic.Point(1, 0)
+		        //v = new REALbasic.Point((x1Comp - cxComp) / rx, (y1Comp - cyComp) / ry)
+		        Var ux As Double = 1
+		        Var uy As Double = 0
+		        Var vx As Double = (x1Comp - cxComp) / rx
+		        Var vy As Double = (y1Comp - cyComp) / ry
+		        theta1 = angleBetweenVectors(ux, uy, vx, vy)
 		        
-		        u = new REALbasic.Point((x1Comp - cxComp) / rx, (y1Comp - cyComp) / ry)
-		        v = new REALbasic.Point((-x1Comp - cxComp) / rx, (-y1Comp - cyComp) / ry)
-		        thetaDelta = angleBetweenVectors(u, v)
+		        //u = new REALbasic.Point((x1Comp - cxComp) / rx, (y1Comp - cyComp) / ry)
+		        //v = new REALbasic.Point((-x1Comp - cxComp) / rx, (-y1Comp - cyComp) / ry)
+		        //thetaDelta = angleBetweenVectors(u, v)
+		        ux = (x1Comp - cxComp) / rx
+		        uy = (y1Comp - cyComp) / ry
+		        vx = (-x1Comp - cxComp) / rx
+		        vy = (-y1Comp - cyComp) / ry
+		        thetaDelta = angleBetweenVectors(ux, uy, vx, vy)
 		        thetaDelta = thetaDelta mod 360
 		        
 		        if (flagS = 0) and (thetaDelta > 0) then
@@ -1737,11 +1753,6 @@ Protected Module SVG
 		        
 		        tmpMatrix = translationMatrix(0, 0) 
 		        
-		        if radiScale > 1 then
-		          rx = Sqrt(radiScale) * rx
-		          ry = Sqrt(radiScale) * ry
-		        end if
-		        
 		        tmpMatrix2 = translationMatrix(cx, cy)
 		        tmpMatrix = matrixMultiply(tmpMatrix, tmpMatrix2)
 		        tmpMatrix2 = rotationMatrix(theta)
@@ -1752,14 +1763,6 @@ Protected Module SVG
 		        // correction of out-of-range radii
 		        
 		        while currentAngle * adjustValue <= (theta1 + thetaDelta) * adjustValue
-		          //cs = new CurveShape()
-		          //fs.Append cs
-		          
-		          //tmpX = penX
-		          //tmpY = penY
-		          //transformPoint tmpX, tmpY, matrix
-		          //cs.X = tmpX
-		          //cs.Y = tmpY
 		          
 		          tmpX = cx + rx  * cos(currentAngle * DegToRad) // center a + radius x * cos(theta) 
 		          tmpY = cy + ry * sin(currentAngle * DegToRad) // center b + radius y * sin(theta)
@@ -1769,37 +1772,23 @@ Protected Module SVG
 		          penY = tmpY
 		          transformPoint tmpX, tmpY, matrix
 		          
-		          //cs.X2 = tmpX
-		          //cs.Y2 = tmpY
-		          
 		          shape.AddLineToPoint tmpX, tmpY 
 		          
 		          currentAngle = currentAngle + angleStep
 		          
 		        wend 
 		        
-		        if (penX <> x2) or (penY <> y2) then
-		          //cs = new CurveShape()
-		          //fs.Append cs
-		          
-		          //tmpX = penX
-		          //tmpY = penY
-		          //transformPoint tmpX, tmpY, matrix
-		          shape.AddLineToPoint tmpX, tmpY
-		          //cs.X = tmpX
-		          //cs.Y = tmpY
-		          
-		          tmpX = x2
-		          tmpY = y2
-		          penX = tmpX
-		          penY = tmpY
-		          transformPoint tmpX, tmpY, matrix
-		          //cs.X2 = tmpX
-		          //cs.Y2 = tmpY
-		          
-		          shape.AddLineToPoint tmpX, tmpY
-		          
-		        end if
+		        //if (penX <> x2) or (penY <> y2) then
+		        //
+		        //tmpX = x2
+		        //tmpY = y2
+		        //penX = tmpX
+		        //penY = tmpY
+		        //transformPoint tmpX, tmpY, matrix
+		        //
+		        //shape.AddLineToPoint tmpX, tmpY
+		        //
+		        //end if
 		        
 		        continueImplicit = false
 		        if i < path.Ubound then
