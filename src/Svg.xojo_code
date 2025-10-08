@@ -1194,8 +1194,6 @@ Protected Module SVG
 		  Dim fill As String
 		  Dim stroke As String
 		  Dim strokeWidth As Double
-		  //Dim fs as new FigureShape
-		  //Dim cs As CurveShape
 		  Dim d As String
 		  Dim ch As String
 		  Dim penX As Double
@@ -1213,7 +1211,6 @@ Protected Module SVG
 		  Dim itemStroke As Boolean
 		  Dim itemStrokeColor As Color
 		  Dim prevClosed As Boolean
-		  Dim currentCommand As String
 		  Dim additionalPath() As String
 		  Dim e As SVG.SVGException
 		  Dim x1 As Double
@@ -1234,8 +1231,6 @@ Protected Module SVG
 		  Dim theta1 As Integer
 		  Dim thetaDelta As Integer
 		  Dim tmpDbl As Double
-		  Dim u As REALbasic.Point
-		  Dim v As REALbasic.Point
 		  Dim currentAngle As Double
 		  Dim angleStep As Double
 		  Dim pathMB As MemoryBlock
@@ -1350,272 +1345,7 @@ Protected Module SVG
 		    path.Remove(path.Ubound)
 		  end if
 		  
-		  // prep path to hide any possible artifacts created by multiple closed paths in a single path instruction
 		  
-		  i = 0
-		  additionalPath.Append "M"
-		  currentCommand = ""
-		  while i <= path.Ubound
-		    select case path(i)
-		      
-		    case "M", "m"
-		      if StrComp(path(i), "m", 0) = 0 then
-		        penX = penX + Val(path(i + 1))
-		        penY = penY + Val(path(i + 2))
-		        if i = 0 then
-		          relativeCommand = true
-		        end if
-		        //additionalPath.Append Str(penX, "-##########0.0####")
-		        //additionalPath.Append Str(penY, "-##########0.0####")
-		        additionalPath.Append Str(penX)
-		        additionalPath.Append Str(penY)
-		      else
-		        penX = Val(path(i + 1))
-		        penY = Val(path(i + 2))
-		        if i = 0 then
-		          relativeCommand = false
-		        end if
-		        additionalPath.Append path(i + 1)
-		        additionalPath.Append path(i + 2)
-		      end if
-		      
-		      currentCommand = path(i)
-		      
-		      i = i + 3
-		      if StrComp(currentCommand, "m", 0) = 0 then
-		        while (i <= path.Ubound) and IsNumeric(path(i))
-		          penX = penX + Val(path(i))
-		          penY = penY + Val(path(i + 1))
-		          i = i + 2
-		        wend
-		      else
-		        while (i <= path.Ubound) and IsNumeric(path(i))
-		          penX = Val(path(i))
-		          penY = Val(path(i + 1))
-		          i = i + 2
-		        wend
-		      end if
-		      
-		      while (i <= path.Ubound) and (path(i) <> "z")
-		        
-		        if StrComp(path(i), "A", 0) = 0 then // absolute elliptical arc
-		          
-		          penX = Val(path(i + 6))
-		          penY = Val(path(i + 7))
-		          i = i + 8
-		          while (i <= path.Ubound) and IsNumeric(path(i))
-		            penX = Val(path(i + 5))
-		            penY = Val(path(i + 6))
-		            i = i + 7
-		          wend
-		          
-		        elseif StrComp(path(i), "a", 0) = 0 then // relative elliptical arc
-		          
-		          penX = penX + Val(path(i + 6))
-		          penY = penY + Val(path(i + 7))
-		          i = i + 8
-		          while (i <= path.Ubound) and IsNumeric(path(i))
-		            penX = penX + Val(path(i + 5))
-		            penY = penY + Val(path(i + 6))
-		            i = i + 7
-		          wend
-		          
-		        elseif StrComp(path(i), "C", 0) = 0 then // absolute curveto
-		          
-		          penX = Val(path(i + 5))
-		          penY = Val(path(i + 6))
-		          i = i + 7
-		          while (i <= path.Ubound) and IsNumeric(path(i))
-		            penX = Val(path(i + 4))
-		            penY = Val(path(i + 5))
-		            i = i + 6
-		          wend
-		          
-		        elseif StrComp(path(i), "c", 0) = 0 then // relative curveto
-		          
-		          penX = penX + Val(path(i + 5))
-		          penY = penY + Val(path(i + 6))
-		          i = i + 7
-		          while (i <= path.Ubound) and IsNumeric(path(i))
-		            penX = penX + Val(path(i + 4))
-		            penY = penY + Val(path(i + 5))
-		            i = i + 6
-		          wend
-		          
-		        elseif StrComp(path(i), "H", 0) = 0 then // absolute horizontal lineto
-		          
-		          penX = Val(path(i + 1))
-		          
-		          i = i + 2
-		          while (i <= path.Ubound) and IsNumeric(path(i))
-		            penX = Val(path(i))
-		            i = i + 1
-		          wend
-		          
-		        elseif StrComp(path(i), "h", 0) = 0 then // relative horizontal lineto
-		          
-		          penX = penX + Val(path(i + 1))
-		          
-		          i = i + 2
-		          while (i <= path.Ubound) and IsNumeric(path(i))
-		            penX = penX + Val(path(i))
-		            i = i + 1
-		          wend
-		          
-		        elseif StrComp(path(i), "L", 0) = 0 then // absolute lineto
-		          
-		          penX = Val(path(i + 1))
-		          penY = Val(path(i + 2))
-		          
-		          i = i + 3
-		          while (i <= path.Ubound) and IsNumeric(path(i))
-		            penX = Val(path(i))
-		            penY = Val(path(i + 1))
-		            i = i + 2
-		          wend
-		          
-		        elseif StrComp(path(i), "l", 0) = 0 then // relative lineto
-		          
-		          penX = penX + Val(path(i + 1))
-		          penY = penY + Val(path(i + 2))
-		          
-		          i = i + 3
-		          while (i <= path.Ubound) and IsNumeric(path(i))
-		            penX = penX + Val(path(i))
-		            penY = penY + Val(path(i + 1))
-		            i = i + 2
-		          wend
-		          
-		        elseif StrComp(path(i), "M", 0) = 0 then // absolute  moveto
-		          
-		          penX = Val(path(i + 1))
-		          penY = Val(path(i + 2))
-		          i = i + 3
-		          while (i <= path.Ubound) and IsNumeric(path(i))
-		            penX = Val(path(i))
-		            penY = Val(path(i + 1))
-		            i = i + 2
-		          wend
-		          
-		        elseif StrComp(path(i), "m", 0) = 0 then // relative  moveto
-		          
-		          penX = penX + Val(path(i +1))
-		          penY = penY + Val(path(i +2))
-		          i = i + 3
-		          while (i <= path.Ubound) and IsNumeric(path(i))
-		            penX = penX + Val(path(i))
-		            penY = penY + Val(path(i +1))
-		            i = i + 2
-		          wend
-		          
-		        elseif StrComp(path(i), "Q", 0) = 0 then // absolute  quadratic Bézier curveto
-		          
-		          penX = Val(path(i + 3))
-		          penY = Val(path(i + 4))
-		          i = i + 5
-		          while (i <= path.Ubound) and IsNumeric(path(i))
-		            penX = Val(path(i + 2))
-		            penY = Val(path(i + 3))
-		            i = i + 4
-		          wend
-		          
-		        elseif StrComp(path(i), "q", 0) = 0 then // relative  quadratic Bézier curveto
-		          
-		          penX = penX + Val(path(i + 3))
-		          penY = penY + Val(path(i + 4))
-		          i = i + 5
-		          while (i <= path.Ubound) and IsNumeric(path(i))
-		            penX = penX + Val(path(i + 2))
-		            penY = penY + Val(path(i + 3))
-		            i = i + 4
-		          wend
-		          
-		        elseif StrComp(path(i), "S", 0) = 0 then // absolute smooth curveto
-		          
-		          penX = Val(path(i + 3))
-		          penY = Val(path(i + 4))
-		          
-		          i = i + 5
-		          while (i <= path.Ubound) and IsNumeric(path(i))
-		            penX = Val(path(i + 2))
-		            penY = Val(path(i + 3))
-		            i = i + 4
-		          wend
-		          
-		        elseif StrComp(path(i), "s", 0) = 0 then // relative smooth curveto
-		          
-		          penX = penX + Val(path(i + 3))
-		          penY = penY + Val(path(i + 4))
-		          
-		          i = i + 5
-		          while (i <= path.Ubound) and IsNumeric(path(i))
-		            penX = penX + Val(path(i + 2))
-		            penY = penY + Val(path(i + 3))
-		            i = i + 4
-		          wend
-		          
-		        elseif StrComp(path(i), "T", 0) = 0 then // absolute  smooth quadratic Bézier curveto
-		          
-		          penX = Val(path(i + 1))
-		          penY = Val(path(i + 2))
-		          i = i + 5
-		          while (i <= path.Ubound) and IsNumeric(path(i))
-		            penX = Val(path(i))
-		            penY = Val(path(i + 1))
-		            i = i + 4
-		          wend
-		          
-		        elseif StrComp(path(i), "t", 0) = 0 then // relative  smooth quadratic Bézier curveto
-		          
-		          penX = penX + Val(path(i + 1))
-		          penY = penY + Val(path(i + 2))
-		          i = i + 3
-		          while (i <= path.Ubound) and IsNumeric(path(i))
-		            penX = penX + Val(path(i))
-		            penY = penY + Val(path(i + 1))
-		            i = i + 2
-		          wend
-		          
-		        elseif StrComp(path(i), "V", 0) = 0 then // absolute vertical lineto
-		          
-		          penY = Val(path(i + 1))
-		          
-		          i = i + 2
-		          while (i <= path.Ubound) and IsNumeric(path(i))
-		            penY = Val(path(i))
-		            i = i + 1
-		          wend
-		          
-		        elseif StrComp(path(i), "v", 0) = 0 then // relative vertical lineto
-		          
-		          penY = penY + Val(path(i + 1))
-		          
-		          i = i + 2
-		          while (i <= path.Ubound) and IsNumeric(path(i))
-		            penY = penY + Val(path(i))
-		            i = i + 1
-		          wend
-		          
-		        else
-		          
-		          i = i + 1
-		          
-		        end if
-		        
-		      wend
-		      if (i <= path.Ubound) and not relativeCommand then
-		        path.Insert i, "L"
-		        path.Insert i + 1, additionalPath(additionalPath.Ubound - 1)
-		        path.Insert i + 2, additionalPath(additionalPath.Ubound)
-		      end if
-		      i = i + 1
-		      
-		    case else 
-		      i = i + 1
-		      
-		    end select
-		    
-		  wend
 		  
 		  if additionalPath.Ubound > 4 then
 		    additionalPath.Append "z"
@@ -2055,6 +1785,11 @@ Protected Module SVG
 		      //fs = new FigureShape()
 		      //end if
 		      ///break
+		      
+		      //if not prevClosed then
+		      //RenderPath g, shape, style, matrix(0), false, true, true
+		      //shape = new GraphicsPath
+		      //end if
 		      
 		      i = i + 1
 		      tmpX = Val(path(i))
@@ -2533,6 +2268,7 @@ Protected Module SVG
 		      prevQCommand = false
 		      
 		    elseif path(i) = "z" then // close path
+		      
 		      prevClosed = true
 		      
 		      prevCCommand = false
