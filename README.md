@@ -3,7 +3,7 @@ Library to render SVG images in Xojo.
 
 ## Installation
 
-Copy the SVG module from the project located in the [source folder](https://github.com/Zoclee/xojo-svg/tree/main.src) to your own project.
+Copy the SVG module from the project located in the [source folder](https://github.com/Zoclee/xojo-svg/tree/main/src) to your own project.
 
 ## Example Code
 
