@@ -720,13 +720,33 @@ Protected Module SVG
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
+		Private Sub process_defs(node As XmlNode)
+		  Var i As Integer
+		  
+		  i = 0
+		  while i < node.ChildCount
+		    select case node.Child(i).Name
+		      
+		    case "style"
+		      process_style(node.Child(i))
+		      
+		    end select
+		    i = i + 1
+		  wend
+		  
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
 		Private Sub process_style(node As XmlNode)
 		  Var styleData As String
+		  Var typeStr As String
 		  
-		  //select case node.GetCIAttribute("type")
-		  select case node.GetAttribute("type")
+		  typeStr = node.GetAttribute("type")
+		  select case typeStr
 		    
-		  case "text/css"
+		  case "", "text/css"
 		    styleData = node.FirstChild.Value
 		    loadCSS(styleData)
 		    
@@ -750,7 +770,7 @@ Protected Module SVG
 		    render_circle(node, g, parentMatrix, parentStyle)
 		    
 		  case "defs"
-		    // we ignore these tags
+		    process_defs(node)
 		    
 		  case "desc"
 		    // we ignore these tags
