@@ -729,6 +729,7 @@ Protected Module SVG
 	#tag Method, Flags = &h21
 		Private Sub process_defs(node As XmlNode)
 		  Var i As Integer
+		  Var id As String
 		  
 		  i = 0
 		  while i < node.ChildCount
@@ -736,6 +737,12 @@ Protected Module SVG
 		      
 		    case "style"
 		      process_style(node.Child(i))
+		      
+		    case else
+		      id = node.Child(i).GetAttribute("id")
+		      if id <> "" then
+		        mNodes.Value("#" + id) = node.Child(i)
+		      end if
 		      
 		    end select
 		    i = i + 1
@@ -767,6 +774,9 @@ Protected Module SVG
 	#tag Method, Flags = &h21
 		Private Sub renderNode(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
 		  Var e As SVG.SVGException
+		  Var nodeId As String
+		  Var useNode As XMLNode
+		  Var style As JSONItem
 		  
 		  select case node.Name
 		    
@@ -821,6 +831,23 @@ Protected Module SVG
 		  case "title"
 		    // we ignore these tags
 		    
+		  case "use"
+		    nodeId = node.GetAttribute("xlink:href")
+		    if mNodes.HasKey(nodeId) then
+		      useNode = mNodes.Value(nodeId)
+		      
+		      style = new JSONItem("{}")
+		      style.ApplyValues parentStyle
+		      style.ApplyValues buildStyleItem(node)
+		      
+		      renderNode(useNode, g, parentMatrix, style)
+		    else
+		      e = new SVG.SVGException()
+		      e.ErrorNumber = Integer(SVGErrorEnum.NodeNotFound)
+		      e.Message = "Node not found: " + nodeId
+		      Raise e
+		    end if
+		    
 		  case else
 		    
 		    if node.Name.Left(9) <> "sodipodi:" then // we ignore sodipodi tags
@@ -830,7 +857,7 @@ Protected Module SVG
 		      
 		      #if DebugBuild then
 		        e = new SVG.SVGException()
-		        e.ErrorNumber = 4
+		        e.ErrorNumber = Integer(SVGErrorEnum.UnknownElement)
 		        e.Message = "Unknown element: " + node.Name
 		        Raise e
 		      #endif
@@ -896,6 +923,7 @@ Protected Module SVG
 		  Var svgImage As Picture
 		  
 		  mClasses = new JSONItem("{}")
+		  mNodes = new Dictionary()
 		  matrix = identityMatrix()
 		  
 		  i = 0
@@ -1275,6 +1303,7 @@ Protected Module SVG
 		  Var controlY1 As Double
 		  Var controlX2 As Double
 		  Var controlY2 As Double
+		  Var tmpStr As String
 		  
 		  shape = new GraphicsPath()
 		  
@@ -1318,9 +1347,15 @@ Protected Module SVG
 		  
 		  // build figure shape
 		  
-		  penX = 0
+		  tmpStr = parentStyle.Lookup("x", "0")
+		  penX = Val(tmpStr)
 		  penY = 0
 		  prevClosed = false
+		  
+		  tmpX = penX
+		  tmpY = penY
+		  transformPoint tmpX, tmpY, matrix
+		  shape.MoveToPoint tmpX, tmpY
 		  
 		  d = Trim(style.LookupString("d", ""))
 		  d = d.ReplaceAll(",", " ")
@@ -1394,9 +1429,6 @@ Protected Module SVG
 		      i = i + 1
 		    wend
 		  end if
-		  
-		  penX = 0
-		  penY = 0
 		  
 		  // draw path
 		  
@@ -2099,7 +2131,7 @@ Protected Module SVG
 		    else
 		      if IsNumeric(path(i)) then
 		        e = new SVG.SVGException()
-		        e.ErrorNumber = 1
+		        e.ErrorNumber = Integer(SVGErrorEnum.ExpectedPathCommand)
 		        e.Message = "Expected path command: " + Str(path(i))
 		        Raise e
 		        i = path.Ubound
@@ -2539,6 +2571,10 @@ Protected Module SVG
 		Private mClasses As JSONItem
 	#tag EndProperty
 
+	#tag Property, Flags = &h21
+		Private mNodes As Dictionary
+	#tag EndProperty
+
 
 	#tag Constant, Name = DegToRad, Type = Double, Dynamic = False, Default = \"0.0174533", Scope = Private
 	#tag EndConstant
@@ -2552,6 +2588,9 @@ Protected Module SVG
 
 	#tag Enum, Name = SVGErrorEnum, Type = Integer, Flags = &h0
 		MalformedXML=1
+		  ExpectedPathCommand = 2
+		  NodeNotFound = 3
+		UnknownElement = 4
 	#tag EndEnum
 
 
