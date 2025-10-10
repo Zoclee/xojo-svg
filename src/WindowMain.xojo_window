@@ -117,7 +117,7 @@ End
 		  
 		  if f <> nil then
 		    
-		    Self.Title = "Xojo SVG v" + " - " + f.NativePath
+		    Self.Title = "Xojo SVG - " + f.NativePath
 		    
 		    tis = TextInputStream.Open(f)
 		    SVGString = tis.ReadAll()
