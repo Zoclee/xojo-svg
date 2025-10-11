@@ -1545,38 +1545,42 @@ Protected Module SVG
 		        
 		        // Build path using calculated values
 		        
-		        adjustValue = thetaDelta / Abs(thetaDelta)
-		        
-		        angleStep = (thetaDelta / 360) 
-		        
-		        currentAngle = theta1 + angleStep
-		        
-		        tmpMatrix = translationMatrix(0, 0) 
-		        
-		        tmpMatrix2 = translationMatrix(cx, cy)
-		        tmpMatrix = matrixMultiply(tmpMatrix, tmpMatrix2)
-		        tmpMatrix2 = rotationMatrix(theta)
-		        tmpMatrix = matrixMultiply(tmpMatrix, tmpMatrix2)
-		        tmpMatrix2 = translationMatrix(-cx, -cy)
-		        tmpMatrix = matrixMultiply(tmpMatrix, tmpMatrix2)
-		        
-		        // correction of out-of-range radii
-		        
-		        while currentAngle * adjustValue <= (theta1 + thetaDelta) * adjustValue
+		        if thetaDelta <> 0 then
 		          
-		          tmpX = cx + rx  * cos(currentAngle * DegToRad) 
-		          tmpY = cy + ry * sin(currentAngle * DegToRad) 
+		          adjustValue = thetaDelta / Abs(thetaDelta)
 		          
-		          transformPoint tmpX, tmpY, tmpMatrix
-		          //penX = tmpX 
-		          //penY = tmpY
-		          transformPoint tmpX, tmpY, matrix
+		          angleStep = (thetaDelta / 360) 
 		          
-		          shape.AddLineToPoint tmpX, tmpY 
+		          currentAngle = theta1 + angleStep
 		          
-		          currentAngle = currentAngle + angleStep
+		          tmpMatrix = translationMatrix(0, 0) 
 		          
-		        wend 
+		          tmpMatrix2 = translationMatrix(cx, cy)
+		          tmpMatrix = matrixMultiply(tmpMatrix, tmpMatrix2)
+		          tmpMatrix2 = rotationMatrix(theta)
+		          tmpMatrix = matrixMultiply(tmpMatrix, tmpMatrix2)
+		          tmpMatrix2 = translationMatrix(-cx, -cy)
+		          tmpMatrix = matrixMultiply(tmpMatrix, tmpMatrix2)
+		          
+		          // correction of out-of-range radii
+		          
+		          while currentAngle * adjustValue <= (theta1 + thetaDelta) * adjustValue
+		            
+		            tmpX = cx + rx  * cos(currentAngle * DegToRad) 
+		            tmpY = cy + ry * sin(currentAngle * DegToRad) 
+		            
+		            transformPoint tmpX, tmpY, tmpMatrix
+		            //penX = tmpX 
+		            //penY = tmpY
+		            transformPoint tmpX, tmpY, matrix
+		            
+		            shape.AddLineToPoint tmpX, tmpY 
+		            
+		            currentAngle = currentAngle + angleStep
+		            
+		          wend 
+		          
+		        end if
 		        
 		        //if isAbsolute then
 		        //tmpX = x2
