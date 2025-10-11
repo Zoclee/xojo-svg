@@ -921,6 +921,14 @@ Protected Module SVG
 		  Var wStr As String
 		  Var hStr As String
 		  Var svgImage As Picture
+		  //Var viewbox As String
+		  //Var viewboxArr() As String
+		  //Var xScale As Double
+		  //Var yScale As Double
+		  //Var scale As Double
+		  //Var xOffset As Double
+		  //Var yOffset As Double
+		  //Var mulMatrix() As Double
 		  
 		  mClasses = new JSONItem("{}")
 		  mNodes = new Dictionary()
@@ -962,9 +970,9 @@ Protected Module SVG
 		        h = g.Height
 		      end if
 		      
-		      //// apply viewbox if there is one
-		      //
-		      //viewbox = Trim(xdoc.Child(i).GetCIAttribute("viewbox"))
+		      // apply viewbox if there is one
+		      
+		      //viewbox = Trim(xdoc.Child(i).GetAttribute("viewbox"))
 		      //if viewbox <> "" then
 		      //while viewbox.InStr(0, "  ") > 0 
 		      //viewbox = viewbox.ReplaceAll("  ", " ")
@@ -982,9 +990,9 @@ Protected Module SVG
 		      //xOffset = (w - (Val(viewboxArr(2))  * scale)) / 2
 		      //yOffset = 0
 		      //end if
-		      //mulMatrix = initTranslationMatrix(xOffset, yOffset)
+		      //mulMatrix = translationMatrix(xOffset, yOffset)
 		      //matrix = matrixMultiply(matrix, mulMatrix)
-		      //mulMatrix = initScaleMatrix(scale, scale)
+		      //mulMatrix = scaleMatrix(scale, scale)
 		      //matrix = matrixMultiply(matrix, mulMatrix)
 		      //
 		      //end if
@@ -1304,6 +1312,8 @@ Protected Module SVG
 		  Var controlX2 As Double
 		  Var controlY2 As Double
 		  Var tmpStr As String
+		  Var startX As Double
+		  Var startY As Double
 		  
 		  shape = new GraphicsPath()
 		  
@@ -1349,7 +1359,8 @@ Protected Module SVG
 		  
 		  tmpStr = parentStyle.Lookup("x", "0")
 		  penX = Val(tmpStr)
-		  penY = 0
+		  tmpStr = parentStyle.Lookup("y", "0")
+		  penY = Val(tmpStr)
 		  prevClosed = false
 		  
 		  tmpX = penX
@@ -1553,12 +1564,12 @@ Protected Module SVG
 		        
 		        while currentAngle * adjustValue <= (theta1 + thetaDelta) * adjustValue
 		          
-		          tmpX = cx + rx  * cos(currentAngle * DegToRad) // center a + radius x * cos(theta) 
-		          tmpY = cy + ry * sin(currentAngle * DegToRad) // center b + radius y * sin(theta)
+		          tmpX = cx + rx  * cos(currentAngle * DegToRad) 
+		          tmpY = cy + ry * sin(currentAngle * DegToRad) 
 		          
 		          transformPoint tmpX, tmpY, tmpMatrix
-		          penX = tmpX 
-		          penY = tmpY
+		          //penX = tmpX 
+		          //penY = tmpY
 		          transformPoint tmpX, tmpY, matrix
 		          
 		          shape.AddLineToPoint tmpX, tmpY 
@@ -1566,6 +1577,25 @@ Protected Module SVG
 		          currentAngle = currentAngle + angleStep
 		          
 		        wend 
+		        
+		        //if isAbsolute then
+		        //tmpX = x2
+		        //tmpY = y2
+		        //else
+		        //tmpX = penX + x2
+		        //tmpY = y1 + y2
+		        //end if
+		        //transformPoint tmpX, tmpY, matrix
+		        //shape.AddLineToPoint tmpX, tmpY 
+		        
+		        //tmpX = x2
+		        //tmpY = y2
+		        //transformPoint tmpX, tmpY, tmpMatrix
+		        //transformPoint tmpX, tmpY, matrix
+		        //shape.AddLineToPoint tmpX, tmpY 
+		        
+		        penX = x2
+		        penY = y2
 		        
 		        continueImplicit = false
 		        if i < path.Ubound then
@@ -1595,7 +1625,7 @@ Protected Module SVG
 		        transformPoint tmpX, tmpY, matrix
 		        controlX2 = tmpX
 		        controlY2 = tmpY
-		        prevControlX = tmpX // TODO
+		        prevControlX = tmpX
 		        prevControlY = tmpY
 		        i = i + 1
 		        tmpX = Val(path(i))
@@ -1641,7 +1671,7 @@ Protected Module SVG
 		        tmpX = penX + Val(path(i))
 		        i = i + 1
 		        tmpY = penY + Val(path(i))
-		        penX = tmpX
+		        penX = tmpX 
 		        penY = tmpY
 		        transformPoint tmpX, tmpY, matrix
 		        
@@ -1763,6 +1793,8 @@ Protected Module SVG
 		      
 		      penX = tmpX
 		      penY = tmpY
+		      startX = penX
+		      startY = penY
 		      
 		      transformPoint tmpX, tmpY, matrix
 		      shape.MoveToPoint tmpX, tmpY
@@ -1800,6 +1832,8 @@ Protected Module SVG
 		      
 		      penX = penX + tmpX
 		      penY = penY + tmpY
+		      startX = penX
+		      startY = penY
 		      
 		      tmpX = penX
 		      tmpY = penY
@@ -1840,8 +1874,8 @@ Protected Module SVG
 		        i = i + 1
 		        tmpY = Val(path(i))
 		        transformPoint tmpX, tmpY, matrix
-		        Var control1X As Double = tmpX
-		        Var control1Y As Double = tmpY
+		        controlX1 = tmpX
+		        controlY1 = tmpY
 		        prevControlX = tmpX
 		        prevControlY = tmpY
 		        i = i + 1
@@ -1852,7 +1886,7 @@ Protected Module SVG
 		        penY = tmpY
 		        transformPoint tmpX, tmpY, matrix
 		        
-		        shape.AddQuadraticCurveToPoint control1X, control1Y, tmpX, tmpY
+		        shape.AddQuadraticCurveToPoint controlX1, controlY1, tmpX, tmpY
 		        
 		        continueImplicit = false
 		        if i < path.Ubound then
@@ -1868,7 +1902,7 @@ Protected Module SVG
 		      
 		    elseif StrComp(path(i), "q", 0) = 0 then // relative quadratic Bézier curveto
 		      do
-		        break
+		        
 		        tmpX = penX
 		        tmpY = penY
 		        transformPoint tmpX, tmpY, matrix
@@ -1890,6 +1924,7 @@ Protected Module SVG
 		        //cs.Y2 = tmpY
 		        
 		        // TODO: draw shape
+		        shape.AddQuadraticCurveToPoint prevControlX, prevControlY, tmpX, tmpY
 		        
 		        continueImplicit = false
 		        if i < path.Ubound then
@@ -1998,7 +2033,7 @@ Protected Module SVG
 		    elseif StrComp(path(i), "T", 0) = 0 then // absolute smooth quadratic Bézier curveto
 		      do
 		        tmpX = penX
-		        tmpY = penY
+		        tmpY = penY 
 		        transformPoint tmpX, tmpY, matrix
 		        
 		        if prevQCommand then
@@ -2036,7 +2071,7 @@ Protected Module SVG
 		      do
 		        //cs = new CurveShape
 		        //fs.Append cs
-		        break
+		        
 		        tmpX = penX
 		        tmpY = penY
 		        transformPoint tmpX, tmpY, matrix
@@ -2044,9 +2079,13 @@ Protected Module SVG
 		        //cs.Y = tmpY
 		        //cs.Order = 1
 		        if prevQCommand then
-		          //cs.ControlX(0) = (tmpX - prevControlX)  + tmpX
-		          //cs.ControlY(0) = (tmpY - prevControlY)  + tmpY
+		          controlX1 = (tmpX - prevControlX) + tmpX
+		          controlY1 = (tmpY - prevControlY) + tmpY
+		          //cs.ControlX(0) = (tmpX - prevControlX) + tmpX
+		          //cs.ControlY(0) = (tmpY - prevControlY) + tmpY
 		        else
+		          controlX1 = tmpX
+		          controlY1 = tmpY
 		          //cs.ControlX(0) = tmpX
 		          //cs.ControlY(0) = tmpY
 		        end if
@@ -2061,6 +2100,8 @@ Protected Module SVG
 		        transformPoint tmpX, tmpY, matrix
 		        //cs.X2 = tmpX
 		        //cs.Y2 = tmpY
+		        
+		        shape.AddQuadraticCurveToPoint controlX1, controlY1, tmpX, tmpY
 		        
 		        continueImplicit = false
 		        if i < path.Ubound then
@@ -2124,6 +2165,9 @@ Protected Module SVG
 		    elseif path(i) = "z" then // close path
 		      
 		      prevClosed = true
+		      
+		      penX = startX
+		      penY = startY
 		      
 		      prevCCommand = false
 		      prevQCommand = false
