@@ -2191,50 +2191,59 @@ Protected Module SVG
 		  Var i As Integer
 		  Var tmpX As Double
 		  Var tmpY As Double
-		  Var points() As Integer
+		  Var path As GraphicsPath
+		  Var rawPoints As String
 		  Var tmpArr() As String
 		  Var coord() As String
-		  Var path As GraphicsPath
 		  
-		  style = new JSONItem("{}")
+		  style = New JSONItem("{}")
 		  style.ApplyValues parentStyle
 		  localStyle = buildStyleItem(node)
 		  style.ApplyValues localStyle
+		  
 		  matrix = buildTransformationMatrix(localStyle.Lookup("transform", ""))
 		  matrix = matrixMultiply(parentMatrix, matrix)
 		  
-		  // build path
+		  // Build path
+		  path = New GraphicsPath()
 		  
-		  path = new GraphicsPath()
+		  rawPoints = style.LookupString("points", "")
+		  tmpArr = rawPoints.Split(" ")
 		  
-		  tmpArr = style.LookupString("points", "").Split(" ")
-		  
-		  if tmpArr.Count > 1 then
-		    
-		    i = 0
-		    coord = tmpArr(i).Split(",")
-		    if coord.Ubound = 1 then
-		      tmpX = Val(coord(0))
-		      tmpY = Val(coord(1))
-		      transformPoint tmpX, tmpY, matrix
-		    end if
-		    path.MoveToPoint tmpX, tmpY
-		    
-		    i = 0
-		    while i <= tmpArr.Ubound
+		  // Find first valid coordinate pair
+		  Var firstSetFound As Boolean = False
+		  For i = 0 To tmpArr.LastIndex
+		    If tmpArr(i).Trim <> "" Then
 		      coord = tmpArr(i).Split(",")
-		      if coord.Ubound = 1 then
+		      If coord.Ubound = 1 Then
 		        tmpX = Val(coord(0))
 		        tmpY = Val(coord(1))
 		        transformPoint tmpX, tmpY, matrix
-		        path.AddLineToPoint tmpX, tmpY
-		      end if
-		      i = i + 1
-		    wend
-		    
-		    RenderPath g, path, style, matrix(0), true, true, true
-		    
-		  end if
+		        path.MoveToPoint tmpX, tmpY
+		        firstSetFound = True
+		        Exit For
+		      End If
+		    End If
+		  Next
+		  
+		  If Not firstSetFound Then Return
+		  
+		  
+		  // Important: start from the NEXT point to avoid a zero-length segment
+		  For i = i + 1 To tmpArr.LastIndex
+		    If tmpArr(i).Trim = "" Then Continue
+		    coord = tmpArr(i).Split(",")
+		    If coord.Ubound = 1 Then
+		      tmpX = Val(coord(0))
+		      tmpY = Val(coord(1))
+		      transformPoint tmpX, tmpY, matrix
+		      path.AddLineToPoint tmpX, tmpY
+		    End If
+		  Next
+		  
+		  // Render (closed = True so you get a join at the end)
+		  RenderPath g, path, style, matrix(0), True, True, True
+		  
 		  
 		End Sub
 	#tag EndMethod
