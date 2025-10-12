@@ -1469,7 +1469,7 @@ Protected Module SVG
 		        i = i + 1
 		        ry = Val(path(i))
 		        i = i + 1
-		        theta = Val(path(i))
+		        theta = Val(path(i)) * DegToRad
 		        i = i + 1
 		        flagA = Val(path(i))
 		        i = i + 1
@@ -1489,8 +1489,8 @@ Protected Module SVG
 		        
 		        // Step 1: Compute (x1', y1')
 		        
-		        x1Comp = cos(theta * DegToRad) * ((x1 - x2) / 2) +  sin(theta * DegToRad) * ((y1 - y2) / 2)
-		        y1Comp = -sin(theta * DegToRad) * ((x1 - x2) / 2) +  cos(theta * DegToRad) * ((y1 - y2) / 2)
+		        x1Comp = cos(theta) * ((x1 - x2) / 2) +  sin(theta) * ((y1 - y2) / 2)
+		        y1Comp = -sin(theta) * ((x1 - x2) / 2) +  cos(theta) * ((y1 - y2) / 2)
 		        
 		        // correction of out-of-range radii
 		        
@@ -1508,7 +1508,6 @@ Protected Module SVG
 		          tmpDbl = 0
 		        end if
 		        tmpDbl = Sqrt(tmpDbl)
-		        //tmpDbl = Sqrt(Abs(tmpDbl))
 		        
 		        if flagA = flagS then
 		          tmpDbl = -tmpDbl
@@ -1519,8 +1518,8 @@ Protected Module SVG
 		        
 		        // Step 3: Compute (cx, cy) from (cx', cy')
 		        
-		        cx = (cos(theta * DegToRad) * cxComp - sin(theta * DegToRad) * cyComp) + ((x1 + x2) / 2)
-		        cy = (sin(theta * DegToRad) * cxComp + cos(theta * DegToRad) * cyComp) + ((y1 + y2) / 2)
+		        cx = (cos(theta) * cxComp - sin(theta) * cyComp) + ((x1 + x2) / 2)
+		        cy = (sin(theta) * cxComp + cos(theta) * cyComp) + ((y1 + y2) / 2)
 		        
 		        // Step 4: Compute theta1 and thetaDelta
 		        
@@ -1557,12 +1556,14 @@ Protected Module SVG
 		          
 		          tmpMatrix2 = translationMatrix(cx, cy)
 		          tmpMatrix = matrixMultiply(tmpMatrix, tmpMatrix2)
-		          tmpMatrix2 = rotationMatrix(theta)
+		          tmpMatrix2 = rotationMatrix(theta * RadToDeg)
 		          tmpMatrix = matrixMultiply(tmpMatrix, tmpMatrix2)
 		          tmpMatrix2 = translationMatrix(-cx, -cy)
 		          tmpMatrix = matrixMultiply(tmpMatrix, tmpMatrix2)
 		          
-		          // correction of out-of-range radii
+		          tmpMatrix = matrixMultiply(tmpMatrix, matrix)
+		          
+		          // build arc path
 		          
 		          while currentAngle * adjustValue <= (theta1 + thetaDelta) * adjustValue
 		            
@@ -1570,9 +1571,6 @@ Protected Module SVG
 		            tmpY = cy + ry * sin(currentAngle * DegToRad) 
 		            
 		            transformPoint tmpX, tmpY, tmpMatrix
-		            //penX = tmpX 
-		            //penY = tmpY
-		            transformPoint tmpX, tmpY, matrix
 		            
 		            shape.AddLineToPoint tmpX, tmpY 
 		            
@@ -1581,22 +1579,6 @@ Protected Module SVG
 		          wend 
 		          
 		        end if
-		        
-		        //if isAbsolute then
-		        //tmpX = x2
-		        //tmpY = y2
-		        //else
-		        //tmpX = penX + x2
-		        //tmpY = y1 + y2
-		        //end if
-		        //transformPoint tmpX, tmpY, matrix
-		        //shape.AddLineToPoint tmpX, tmpY 
-		        
-		        //tmpX = x2
-		        //tmpY = y2
-		        //transformPoint tmpX, tmpY, tmpMatrix
-		        //transformPoint tmpX, tmpY, matrix
-		        //shape.AddLineToPoint tmpX, tmpY 
 		        
 		        penX = x2
 		        penY = y2
