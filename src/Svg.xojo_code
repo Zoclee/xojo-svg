@@ -2228,7 +2228,6 @@ Protected Module SVG
 		  
 		  If Not firstSetFound Then Return
 		  
-		  
 		  // Important: start from the NEXT point to avoid a zero-length segment
 		  For i = i + 1 To tmpArr.LastIndex
 		    If tmpArr(i).Trim = "" Then Continue
