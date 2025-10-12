@@ -87,7 +87,6 @@ Protected Module SVG
 		    
 		    if xAttr.Name = "class" then
 		      
-		      //className = Trim(Lowercase(node.GetCIAttribute(xAttr.Name)))
 		      className = Trim(Lowercase(node.GetAttribute(xAttr.Name)))
 		      if mClasses.HasName("." + className) then
 		        classProperties = mClasses.Value("." + className)
@@ -98,7 +97,6 @@ Protected Module SVG
 		      
 		      // process style attribute
 		      
-		      //styleArr = node.GetCIAttribute(xAttr.Name).Split(";")
 		      styleArr = node.GetAttribute(xAttr.Name).Split(";")
 		      j = 0
 		      while j <= styleArr.Ubound
@@ -111,7 +109,6 @@ Protected Module SVG
 		      
 		    elseif Instr(0, xAttr.Name, ":") <= 0 then
 		      
-		      //result.Value(xAttr.Name.Lowercase) = node.GetCIAttribute(xAttr.Name)
 		      result.Value(xAttr.Name.Lowercase) = node.GetAttribute(xAttr.Name)
 		      
 		    end if
@@ -934,6 +931,12 @@ Protected Module SVG
 		  Var linearBrush As LinearGradientBrush
 		  Var tmpStr As String
 		  Var i As Integer
+		  Var tmpArr() As String
+		  Var dblArr() As Double
+		  
+		  g.SaveState
+		  
+		  // fill
 		  
 		  fill = style.LookupString("fill", "#000000")
 		  fillOpacity = 1
@@ -949,10 +952,6 @@ Protected Module SVG
 		      fillOpacity = Val(style.Value("fill-opacity"))
 		    end if
 		  end if
-		  stroke = style.LookupString("stroke", "")
-		  strokeWidth = style.LookupDouble("stroke-width", 1) * scale
-		  
-		  // fill
 		  
 		  if fillBrush <> nil then
 		    select case fillBrush.Name
@@ -1019,13 +1018,37 @@ Protected Module SVG
 		  
 		  // stroke
 		  
+		  stroke = style.LookupString("stroke", "")
+		  strokeWidth = style.LookupDouble("stroke-width", 1) * scale
+		  
 		  if (stroke <> "none") and (stroke <> "") and (strokeWidth > 0) and doStroke then
+		    
+		    if style.HasKey("stroke-dasharray") then
+		      
+		      tmpStr = style.Value("stroke-dasharray")
+		      while tmpStr.IndexOf("  ") >= 0
+		        tmpStr = tmpStr.ReplaceAll("  ", " ")
+		      wend
+		      
+		      tmpArr = tmpStr.Split(" ")
+		      Redim dblArr(-1)
+		      i = 0
+		      while i < tmpArr.Count
+		        dblArr.Add Val(tmpArr(i))
+		        i = i + 1
+		      wend
+		      
+		      g.LineDash = dblArr
+		      
+		    end if
+		    
 		    g.DrawingColor = determineColor(stroke)
 		    g.PenSize = strokeWidth
 		    g.LineCap = Graphics.LineCapTypes.Butt
 		    g.DrawPath path, closed
 		  end if
 		  
+		  g.RestoreState()
 		  
 		End Sub
 	#tag EndMethod
