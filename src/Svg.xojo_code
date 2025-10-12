@@ -1034,7 +1034,7 @@ Protected Module SVG
 		      Redim dblArr(-1)
 		      i = 0
 		      while i < tmpArr.Count
-		        dblArr.Add Val(tmpArr(i))
+		        dblArr.Add Val(tmpArr(i)) * scale / strokeWidth
 		        i = i + 1
 		      wend
 		      
@@ -1042,9 +1042,20 @@ Protected Module SVG
 		      
 		    end if
 		    
+		    tmpStr = style.Lookup("stroke-linecap", "") 
+		    select case tmpStr
+		    case "butt"
+		      g.LineCap = Graphics.LineCapTypes.Butt
+		    case "round"
+		      g.LineCap = Graphics.LineCapTypes.Round
+		    case "square"
+		      g.LineCap = Graphics.LineCapTypes.Square
+		    case else
+		      g.LineCap = Graphics.LineCapTypes.Butt
+		    end select
+		    
 		    g.DrawingColor = determineColor(stroke)
 		    g.PenSize = strokeWidth
-		    g.LineCap = Graphics.LineCapTypes.Butt
 		    g.DrawPath path, closed
 		  end if
 		  

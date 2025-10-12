@@ -1,0 +1,12 @@
+<svg width="400" height="120" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Butt cap -->
+  <line x1="40" y1="40" x2="160" y2="40" stroke="tomato" stroke-width="20" stroke-linecap="butt"></line>
+
+  <!-- Round cap -->
+  <line x1="40" y1="80" x2="160" y2="80" stroke="steelblue" stroke-width="20" stroke-linecap="round"></line>
+
+  <!-- Square cap -->
+  <line x1="40" y1="120" x2="160" y2="120" stroke="#2a9d8f" stroke-width="20" stroke-linecap="square"></line>
+
+</svg>
