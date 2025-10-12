@@ -2322,29 +2322,132 @@ Protected Module SVG
 		  
 		  if (width > 0) and (height > 0) then
 		    
+		    // Read rx/ry per SVG rules
+		    Var rx As Double = style.LookupDouble("rx", 0.0)
+		    Var ry As Double = style.LookupDouble("ry", 0.0)
+		    
+		    // Mirror if only one is provided
+		    If rx > 0.0 And ry = 0.0 Then ry = rx
+		    If ry > 0.0 And rx = 0.0 Then rx = ry
+		    
+		    // Clamp radii
+		    rx = Min(rx, width/2.0)
+		    ry = Min(ry, height/2.0)
+		    
 		    // build path
 		    
 		    path = new GraphicsPath()
 		    
-		    tmpX = x
-		    tmpY = y 
-		    transformPoint tmpX, tmpY, matrix
-		    path.MoveToPoint tmpX, tmpY
-		    
-		    tmpX = x
-		    tmpY = y + height
-		    transformPoint tmpX, tmpY, matrix
-		    path.AddLineToPoint tmpX, tmpY
-		    
-		    tmpX = x + width 
-		    tmpY = y + height
-		    transformPoint tmpX, tmpY, matrix
-		    path.AddLineToPoint tmpX, tmpY
-		    
-		    tmpX = x + width
-		    tmpY = y
-		    transformPoint tmpX, tmpY, matrix
-		    path.AddLineToPoint tmpX, tmpY
+		    If rx <= 0.0 And ry <= 0.0 Then
+		      // Sharp corners (your original path)
+		      tmpX = x
+		      tmpY = y
+		      transformPoint tmpX, tmpY, matrix
+		      path.MoveToPoint tmpX, tmpY
+		      
+		      tmpX = x
+		      tmpY = y + height
+		      transformPoint tmpX, tmpY, matrix
+		      path.AddLineToPoint tmpX, tmpY
+		      
+		      tmpX = x + width
+		      tmpY = y + height
+		      transformPoint tmpX, tmpY, matrix
+		      path.AddLineToPoint tmpX, tmpY
+		      
+		      tmpX = x + width
+		      tmpY = y
+		      transformPoint tmpX, tmpY, matrix
+		      path.AddLineToPoint tmpX, tmpY
+		      
+		    Else
+		      // Rounded corners via cubic Beziers (quarter-ellipses)
+		      Const k As Double = 0.5522847498307936
+		      
+		      // Corner key points
+		      Var x0 As Double = x
+		      Var y0 As Double = y
+		      Var x1 As Double = x + width
+		      Var y1 As Double = y + height
+		      
+		      // Start at (x+rx, y)
+		      Var P0x As Double = x0 + rx
+		      Var P0y As Double = y0
+		      transformPoint P0x, P0y, matrix
+		      path.MoveToPoint P0x, P0y
+		      
+		      // Top edge: to (x+width-rx, y)
+		      Var P1x As Double = x1 - rx
+		      Var P1y As Double = y0
+		      transformPoint P1x, P1y, matrix
+		      path.AddLineToPoint P1x, P1y
+		      
+		      // Top-right corner: (x+width-rx, y) -> (x+width, y+ry)
+		      Var A1x As Double = (x1 - rx) + k*rx
+		      Var A1y As Double = y0
+		      Var B1x As Double = x1
+		      Var B1y As Double = (y0 + ry) - k*ry
+		      Var C1x As Double = x1
+		      Var C1y As Double = y0 + ry
+		      transformPoint A1x, A1y, matrix
+		      transformPoint B1x, B1y, matrix
+		      transformPoint C1x, C1y, matrix
+		      path.AddCurveToPoint A1x, A1y, B1x, B1y, C1x, C1y
+		      
+		      // Right edge: to (x+width, y+height-ry)
+		      Var P2x As Double = x1
+		      Var P2y As Double = y1 - ry
+		      transformPoint P2x, P2y, matrix
+		      path.AddLineToPoint P2x, P2y
+		      
+		      // Bottom-right corner: (x+width, y+height-ry) -> (x+width-rx, y+height)
+		      Var A2x As Double = x1
+		      Var A2y As Double = (y1 - ry) + k*ry
+		      Var B2x As Double = (x1 - rx) + k*rx
+		      Var B2y As Double = y1
+		      Var C2x As Double = x1 - rx
+		      Var C2y As Double = y1
+		      transformPoint A2x, A2y, matrix
+		      transformPoint B2x, B2y, matrix
+		      transformPoint C2x, C2y, matrix
+		      path.AddCurveToPoint A2x, A2y, B2x, B2y, C2x, C2y
+		      
+		      // Bottom edge: to (x+rx, y+height)
+		      Var P3x As Double = x0 + rx
+		      Var P3y As Double = y1
+		      transformPoint P3x, P3y, matrix
+		      path.AddLineToPoint P3x, P3y
+		      
+		      // Bottom-left corner: (x+rx, y+height) -> (x, y+height-ry)
+		      Var A3x As Double = (x0 + rx) - k*rx
+		      Var A3y As Double = y1
+		      Var B3x As Double = x0
+		      Var B3y As Double = (y1 - ry) + k*ry
+		      Var C3x As Double = x0
+		      Var C3y As Double = y1 - ry
+		      transformPoint A3x, A3y, matrix
+		      transformPoint B3x, B3y, matrix
+		      transformPoint C3x, C3y, matrix
+		      path.AddCurveToPoint A3x, A3y, B3x, B3y, C3x, C3y
+		      
+		      // Left edge: to (x, y+ry)
+		      Var P4x As Double = x0
+		      Var P4y As Double = y0 + ry
+		      transformPoint P4x, P4y, matrix
+		      path.AddLineToPoint P4x, P4y
+		      
+		      // Top-left corner: (x, y+ry) -> (x+rx, y)
+		      Var A4x As Double = x0
+		      Var A4y As Double = (y0 + ry) - k*ry
+		      Var B4x As Double = (x0 + rx) - k*rx
+		      Var B4y As Double = y0
+		      Var C4x As Double = x0 + rx
+		      Var C4y As Double = y0
+		      transformPoint A4x, A4y, matrix
+		      transformPoint B4x, B4y, matrix
+		      transformPoint C4x, C4y, matrix
+		      path.AddCurveToPoint A4x, A4y, B4x, B4y, C4x, C4y
+		    End If
 		    
 		    RenderPath g, path, style, matrix(0), true, true, true
 		    
