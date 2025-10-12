@@ -41,6 +41,31 @@ Protected Module SVG
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
+		Private Sub BuildNodeDictionary(node As XMLNode)
+		  Var nodeId As String
+		  Var i As Integer
+		  
+		  nodeId = node.GetAttribute("id")
+		  if nodeId <> "" then
+		    if not mNodes.HasKey(nodeId) then
+		      mNodes.Value("#" + nodeId) = node
+		    end if
+		  end if
+		  
+		  i = 0 
+		  while i < node.ChildCount
+		    if (not node.Child(i) IsA XMLTextNode) and _
+		      (not node.Child(i) IsA XMLComment) and _
+		       (not node.Child(i) IsA XMLProcessingInstruction) then
+		      BuildNodeDictionary(node.Child(i))
+		    end if
+		    i = i + 1
+		  wend
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
 		Private Function buildStyleItem(node As XmlNode) As JSONItem
 		  Var result as new JSONItem("{}")
 		  Var i As Integer
@@ -765,11 +790,11 @@ Protected Module SVG
 		    case "style"
 		      process_style(node.Child(i))
 		      
-		    case else
-		      id = node.Child(i).GetAttribute("id")
-		      if id <> "" then
-		        mNodes.Value("#" + id) = node.Child(i)
-		      end if
+		      //case else
+		      //id = node.Child(i).GetAttribute("id")
+		      //if id <> "" then
+		      //mNodes.Value("#" + id) = node.Child(i)
+		      //end if
 		      
 		    end select
 		    i = i + 1
@@ -1030,6 +1055,8 @@ Protected Module SVG
 		  i = 0
 		  while (i < xdoc.ChildCount) 
 		    if xdoc.Child(i).Name = "svg" then
+		      
+		      BuildNodeDictionary(xdoc.Child(i))
 		      
 		      // determine graphics context width and height
 		      
