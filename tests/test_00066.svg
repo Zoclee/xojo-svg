@@ -1,0 +1,12 @@
+<svg width="400" height="140" viewBox="0 0 400 140" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Miter join -->
+  <polyline points="50,60 90,20 130,60" stroke="tomato" stroke-width="12" stroke-linejoin="miter" fill="none"></polyline>
+
+  <!-- Round join -->
+  <polyline points="170,60 210,20 250,60" stroke="steelblue" stroke-width="12" stroke-linejoin="round" fill="none"></polyline>
+
+  <!-- Bevel join -->
+  <polyline points="290,60 330,20 370,60" stroke="#2a9d8f" stroke-width="12" stroke-linejoin="bevel" fill="none"></polyline>
+
+</svg>

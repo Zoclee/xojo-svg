@@ -1054,6 +1054,16 @@ Protected Module SVG
 		      g.LineCap = Graphics.LineCapTypes.Butt
 		    end select
 		    
+		    tmpStr = style.Lookup("stroke-linejoin", "") 
+		    select case tmpStr
+		    case "miter"
+		      g.LineJoin = Graphics.LineJoinTypes.Miter
+		    case "round"
+		      g.LineJoin = Graphics.LineJoinTypes.Round
+		    case "bevel"
+		      g.LineJoin = Graphics.LineJoinTypes.Bevel
+		    end select
+		    
 		    g.DrawingColor = determineColor(stroke)
 		    g.PenSize = strokeWidth
 		    g.DrawPath path, closed
