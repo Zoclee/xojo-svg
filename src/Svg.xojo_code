@@ -300,6 +300,33 @@ Protected Module SVG
 		End Function
 	#tag EndMethod
 
+	#tag Method, Flags = &h21
+		Private Function DetermineStopColor(style As String) As Color
+		  Var stopColor As Color
+		  Var styleArr() As String
+		  Var i As Integer
+		  Var fillOpacity As Double
+		  Var baseColor As Color
+		  
+		  fillOpacity = 1.0
+		  styleArr = style.ReplaceAll(" ", "").Split(";")
+		  i = 0
+		  while i < styleArr.Count
+		    if styleArr(i).Left(11) = "stop-color:" then
+		      baseColor = determineColor(styleArr(i).Right(styleArr(i).Length - 11))
+		    elseif styleArr(i).Left(13) = "stop-opacity:" then
+		      fillOpacity = Val(styleArr(i).Right(styleArr(i).Length - 13))
+		    end if
+		    i = i + 1
+		  wend
+		  
+		  stopColor = RGB(baseColor.Red, baseColor.Green, baseColor.Blue, (1 - fillOpacity) * 255)
+		  
+		  return stopColor
+		  
+		End Function
+	#tag EndMethod
+
 	#tag Method, Flags = &h0
 		Sub DrawSVG(Extends g As Graphics, svg As String, x As Integer, y As Integer, w1 As Integer = -10000, h1 As Integer = -10000, sx As Integer = 0, sy As Integer = 0, w2 As Integer = -10000, h2 As Integer = -10000)
 		  Var xdoc As XmlDocument
@@ -877,10 +904,20 @@ Protected Module SVG
 		  Var stroke As String
 		  Var strokeWidth As Double
 		  Var drawColor As Color
+		  Var fillBrush As XMLNode
+		  Var brushId As String
+		  Var linearBrush As LinearGradientBrush
+		  Var tmpStr As String
+		  Var i As Integer
 		  
 		  fill = style.LookupString("fill", "#000000")
 		  fillOpacity = 1
-		  if (fill <> "none") and style.HasName("fill-opacity") then
+		  if fill.Left(4) = "url(" then
+		    brushId = fill.Middle(4, fill.Length - 5)
+		    if mNodes.HasKey(brushId) then
+		      fillBrush = mNodes.Value(brushId)
+		    end if
+		  elseif (fill <> "none") and style.HasName("fill-opacity") then
 		    if Val(style.Value("fill-opacity")) = 0 then
 		      fill = "none"
 		    else
@@ -892,7 +929,63 @@ Protected Module SVG
 		  
 		  // fill
 		  
-		  if fill <> "none" and doFill then
+		  if fillBrush <> nil then
+		    select case fillBrush.Name
+		    case "linearGradient"
+		      Var x1, y1, x2, y2 As Integer
+		      Var tmpDbl As Double
+		      tmpStr = fillBrush.GetAttribute("x1")
+		      if tmpStr.Right(1) = "%" then
+		        tmpDbl = Val(tmpStr.Left(tmpStr.Length - 1)) / 100
+		      else
+		        tmpDbl = Val(tmpStr)
+		      end if
+		      x1 = path.Bounds.Left + path.Bounds.Width * tmpDbl
+		      tmpStr = fillBrush.GetAttribute("y1")
+		      if tmpStr.Right(1) = "%" then
+		        tmpDbl = Val(tmpStr.Left(tmpStr.Length - 1)) / 100
+		      else
+		        tmpDbl = Val(tmpStr)
+		      end if
+		      y1 = path.Bounds.Top + path.Bounds.Height * tmpDbl
+		      tmpStr = fillBrush.GetAttribute("x2")
+		      if tmpStr.Right(1) = "%" then
+		        tmpDbl = Val(tmpStr.Left(tmpStr.Length - 1)) / 100
+		      else
+		        tmpDbl = Val(tmpStr)
+		      end if
+		      x2 = path.Bounds.Left + path.Bounds.Width * tmpDbl
+		      tmpStr = fillBrush.GetAttribute("y2")
+		      if tmpStr.Right(1) = "%" then
+		        tmpDbl = Val(tmpStr.Left(tmpStr.Length - 1)) / 100
+		      else
+		        tmpDbl = Val(tmpStr)
+		      end if
+		      y2 = path.Bounds.Top + path.Bounds.Height * tmpDbl
+		      linearBrush = new LinearGradientBrush()
+		      linearBrush.StartPoint = New Point(x1, y1)
+		      linearBrush.EndPoint = New Point(x2, y2)
+		      i = 0
+		      while i < fillBrush.ChildCount
+		        if fillBrush.Child(i).Name = "stop" then
+		          tmpStr = fillBrush.Child(i).GetAttribute("offset")
+		          if tmpStr.Right(1) = "%" then
+		            tmpDbl = Val(tmpStr.Left(tmpStr.Length - 1)) / 100
+		          else
+		            tmpDbl = Val(tmpStr)
+		          end if
+		          tmpStr = fillBrush.Child(i).GetAttribute("style")
+		          linearBrush.GradientStops.Add(New Pair(tmpDbl, DetermineStopColor(tmpStr)))
+		        end if
+		        i = i + 1
+		      wend
+		      g.Brush = linearBrush
+		    end select
+		    
+		    g.FillPath path, true
+		    g.Brush = nil
+		    
+		  elseif fill <> "none" and doFill then
 		    drawColor = determineColor(fill)
 		    drawColor = RGB(drawColor.Red, drawColor.Green, drawColor.Blue, (1 - fillOpacity) * 255)
 		    g.DrawingColor = drawColor
@@ -2298,7 +2391,6 @@ Protected Module SVG
 		    RenderPath g, path, style, matrix(0), false, true, true
 		    
 		  end if
-		  
 		  
 		End Sub
 	#tag EndMethod
