@@ -107,7 +107,7 @@ Protected Module SVG
 		        j = j + 1
 		      wend
 		      
-		    elseif Instr(0, xAttr.Name, ":") <= 0 then
+		    elseif xAttr.Name.IndexOf(":") < 0 then
 		      
 		      result.Value(xAttr.Name.Lowercase) = node.GetAttribute(xAttr.Name)
 		      
@@ -245,7 +245,7 @@ Protected Module SVG
 		    tmpStr = s
 		  end if
 		  
-		  if Len(tmpStr) = 3 then
+		  if tmpStr.Length = 3 then
 		    tmpStr = Left(tmpStr, 1) + Left(tmpStr, 1) + Mid(tmpStr, 2, 1) + Mid(tmpStr, 2, 1) + Right(tmpStr, 1) + Right(tmpStr, 1)
 		  end if
 		  
@@ -310,7 +310,7 @@ Protected Module SVG
 		      tmpStr = Mid(colStr, startPos + 1, endPos - startPos - 1)
 		      tmpArr = tmpStr.Split(",")
 		      if tmpArr.LastIndex = 2 then
-		        col = RGB(Val(tmpArr(0)), Val(tmpArr(1)), Val(tmpArr(2)))
+		        col = Color.RGB(Val(tmpArr(0)), Val(tmpArr(1)), Val(tmpArr(2)))
 		      end if
 		    end if
 		  else
@@ -342,7 +342,7 @@ Protected Module SVG
 		    i = i + 1
 		  wend
 		  
-		  stopColor = RGB(baseColor.Red, baseColor.Green, baseColor.Blue, (1 - fillOpacity) * 255)
+		  stopColor = Color.RGB(baseColor.Red, baseColor.Green, baseColor.Blue, (1 - fillOpacity) * 255)
 		  
 		  return stopColor
 		  
@@ -498,7 +498,7 @@ Protected Module SVG
 		        b = dy2 * ( dx2 * ( p1.blue ) + dx1 * ( p2.blue ) ) + dy1 * ( dx2 * ( p3.blue ) + dx1 * ( p4.blue ) )
 		        a = dy2 * ( dx2 * ( p1.Alpha ) + dx1 * ( p2.Alpha ) ) + dy1 * ( dx2 * ( p3.Alpha ) + dx1 * ( p4.Alpha ) )
 		        
-		        tgtRGB.Pixel(x,y) = RGB(r, gp, b, a)
+		        tgtRGB.Pixel(x,y) = Color.RGB(r, gp, b, a)
 		      end if
 		    next
 		  next
@@ -580,13 +580,13 @@ Protected Module SVG
 		      
 		    elseif ch = "}" then
 		      if propName <> "" then
-		        classProperties.Value(Lowercase(propName)) = propValue
+		        classProperties.Value(propName.Lowercase()) = propValue
 		      end if
-		      mClasses.Value(Lowercase(Trim(className))) = classProperties
+		      mClasses.Value(className.Trim().Lowercase()) = classProperties
 		      state = 0 // next class
 		      
 		    elseif ch = ";" then
-		      classProperties.Value(Lowercase(propName)) = propValue
+		      classProperties.Value(propName.Lowercase()) = propValue
 		      propName = ""
 		      propValue = ""
 		      state = 2 // property name
@@ -624,7 +624,7 @@ Protected Module SVG
 		  
 		  commaPos = Instr(0, data, ",")
 		  if commaPos > 0 then
-		    imageData = DecodeBase64(Right(data, Len(data) - commaPos))
+		    imageData = DecodeBase64(Right(data, data.Length - commaPos))
 		    image = Picture.FromData(imageData)
 		    alphaImage = new Picture(image.Width, image.Height)
 		    alphaImage.Graphics.DrawPicture image, 0, 0
@@ -1010,7 +1010,7 @@ Protected Module SVG
 		    
 		  elseif fill <> "none" and doFill then
 		    drawColor = determineColor(fill)
-		    drawColor = RGB(drawColor.Red, drawColor.Green, drawColor.Blue, (1 - fillOpacity) * 255)
+		    drawColor = Color.RGB(drawColor.Red, drawColor.Green, drawColor.Blue, (1 - fillOpacity) * 255)
 		    g.DrawingColor = drawColor
 		    g.FillPath path, true
 		  end if
@@ -1112,17 +1112,16 @@ Protected Module SVG
 		        if IsNumeric(wStr) then
 		          w = Val(wStr)
 		        elseif Right(wStr, 1) = "%" then
-		          w = g.Width * (Val(Left(wStr, Len(wStr) - 1)) / 100)
+		          w = g.Width * (Val(Left(wStr, wStr.Length - 1)) / 100)
 		        end if
 		      end if
 		      
-		      //hStr = Trim(xdoc.Child(i).GetCIAttribute("height"))
-		      hStr = Trim(xdoc.Child(i).GetAttribute("height"))
+		      hStr = xdoc.Child(i).GetAttribute("height").Trim()
 		      if hStr <> "" then
 		        if IsNumeric(hStr) then
 		          h = Val(hStr)
 		        elseif Right(hStr, 1) = "%" then
-		          h = g.Height * (Val(Left(hStr, Len(hStr) - 1)) / 100)
+		          h = g.Height * (Val(Left(hStr, hStr.Length - 1)) / 100)
 		        end if
 		      end if
 		      
@@ -1563,16 +1562,16 @@ Protected Module SVG
 		    elseif not IsNumeric(ch) and (ch <> ".") and (ch <> "-") and (ch <> "e") then
 		      
 		      if path(path.LastIndex) <> "" then
-		        path.Append ch
+		        path.Add ch
 		      else
 		        path(path.LastIndex) = ch
 		      end if
-		      path.Append ""
+		      path.Add ""
 		      
 		    elseif ch = "." then
 		      
 		      if Instr(0, path(path.LastIndex), ".") > 0 then
-		        path.Append "."
+		        path.Add "."
 		      else
 		        path(path.LastIndex) = path(path.LastIndex) + ch
 		      end if
@@ -1586,20 +1585,20 @@ Protected Module SVG
 		  wend
 		  
 		  if path(path.LastIndex) = "" then
-		    path.Remove(path.LastIndex)
+		    path.RemoveAt(path.LastIndex)
 		  end if
 		  
 		  if additionalPath.LastIndex > 4 then
-		    additionalPath.Append "z"
+		    additionalPath.Add "z"
 		    if relativeCommand then
-		      additionalPath.Append "M"
-		      additionalPath.Append "0"
-		      additionalPath.Append "0"
+		      additionalPath.Add "M"
+		      additionalPath.Add "0"
+		      additionalPath.Add "0"
 		    end if
 		    
 		    i = 0
 		    while i <= additionalPath.LastIndex
-		      path.Insert(i, additionalPath(i))
+		      path.AddAt(i, additionalPath(i))
 		      i = i + 1
 		    wend
 		  end if
@@ -2218,25 +2217,15 @@ Protected Module SVG
 		      
 		    elseif StrComp(path(i), "t", 0) = 0 then // relative smooth quadratic Bézier curveto
 		      do
-		        //cs = new CurveShape
-		        //fs.Append cs
-		        
 		        tmpX = penX
 		        tmpY = penY
 		        transformPoint tmpX, tmpY, matrix
-		        //cs.X = tmpX
-		        //cs.Y = tmpY
-		        //cs.Order = 1
 		        if prevQCommand then
 		          controlX1 = (tmpX - prevControlX) + tmpX
 		          controlY1 = (tmpY - prevControlY) + tmpY
-		          //cs.ControlX(0) = (tmpX - prevControlX) + tmpX
-		          //cs.ControlY(0) = (tmpY - prevControlY) + tmpY
 		        else
 		          controlX1 = tmpX
 		          controlY1 = tmpY
-		          //cs.ControlX(0) = tmpX
-		          //cs.ControlY(0) = tmpY
 		        end if
 		        prevControlX = tmpX
 		        prevControlY = tmpY
@@ -2247,8 +2236,6 @@ Protected Module SVG
 		        penX = tmpX
 		        penY = tmpY
 		        transformPoint tmpX, tmpY, matrix
-		        //cs.X2 = tmpX
-		        //cs.Y2 = tmpY
 		        
 		        shape.AddQuadraticCurveToPoint controlX1, controlY1, tmpX, tmpY
 		        
@@ -2677,7 +2664,7 @@ Protected Module SVG
 		  x = style.LookupDouble("x")
 		  y = style.LookupDouble("y")
 		  fill = style.LookupString("fill", "#000000")
-		  if (fill <> "none") and style.HasName("fill-opacity") then
+		  if (fill <> "none") and style.HasKey("fill-opacity") then
 		    if Val(style.Value("fill-opacity")) = 0 then
 		      fill = "none"
 		    elseif Val(style.Value("fill-opacity")) = 1 then
@@ -2699,14 +2686,14 @@ Protected Module SVG
 		      elementStyle = new JSONItem(style.ToString())
 		      
 		      if node.Child(i).Name = "#text" then
-		        textStr = Trim(node.FirstChild.Value)
+		        textStr = node.FirstChild.Value.Trim()
 		      elseif node.Child(i).Name = "tspan" then
 		        
 		        tspanStyle = buildStyleItem(node.Child(i))
 		        elementStyle.ApplyValues(tspanStyle)
 		        if node.Child(i).FirstChild <> nil then
 		          if node.Child(i).FirstChild.Name = "#text" then
-		            textStr = Trim(node.Child(i).FirstChild.Value)
+		            textStr = node.Child(i).FirstChild.Value.Trim()
 		          end if
 		        end if
 		        
@@ -2717,9 +2704,9 @@ Protected Module SVG
 		      
 		      if textStr <> "" then
 		        
-		        g.TextFont = elementStyle.LookupString("font-family", "Arial")
-		        g.TextUnit = FontUnits.Pixel
-		        g.TextSize = elementStyle.LookupDouble("font-size", 16)
+		        g.FontName = elementStyle.LookupString("font-family", "Arial")
+		        g.FontUnit = FontUnits.Pixel
+		        g.FontSize = elementStyle.LookupDouble("font-size", 16)
 		        g.Bold = false
 		        if elementStyle.LookupString("font-weight", "") = "bold" then
 		          g.Bold = true
@@ -2729,9 +2716,9 @@ Protected Module SVG
 		        elementMatrix = matrixMultiply(matrix, mulMatrix)
 		        
 		        strShape.FillColor = determineColor(fill)
-		        strShape.FontName = g.TextFont
-		        strShape.FontUnit = g.TextUnit
-		        strShape.FontSize = g.TextSize * elementMatrix(0)
+		        strShape.FontName = g.FontName
+		        strShape.FontUnit = g.FontUnit
+		        strShape.FontSize = g.FontSize * elementMatrix(0)
 		        strShape.Bold = g.Bold
 		        select case elementStyle.Lookup("text-anchor", "start")
 		        case "end"
