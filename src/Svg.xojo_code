@@ -311,11 +311,11 @@ Protected Module SVG
 		  
 		  if ColorTable.HasKey(colStr) then
 		    col = ColorTable.Value(colStr)
-		  elseif left(colStr, 3) = "rgb" then
-		    startPos = Instr(0, colStr, "(")
-		    endPos = Instr(startPos + 1, colStr, ")")
-		    if (startPos > 0) and (endPos > 0) then
-		      tmpStr = Mid(colStr, startPos + 1, endPos - startPos - 1)
+		  elseif colStr.Left(3) = "rgb" then
+		    startPos = colStr.IndexOf(0, "(")
+		    endPos = colStr.IndexOf(startPos + 1, ")")
+		    if (startPos >= 0) and (endPos >= 0) then
+		      tmpStr = colStr.Middle(startPos + 1, endPos - startPos - 1)
 		      tmpArr = tmpStr.Split(",")
 		      if tmpArr.LastIndex = 2 then
 		        col = Color.RGB(Val(tmpArr(0)), Val(tmpArr(1)), Val(tmpArr(2)))
@@ -396,16 +396,16 @@ Protected Module SVG
 		Private Sub DrawTransformedPicture(Extends g As Graphics, image As Picture, matrix() As Double)
 		  Var srcWidth as Integer
 		  Var srcHeight as Integer 
-		  Var destinationQuadrilateral() as REALbasic.Point
+		  Var destinationQuadrilateral() as Xojo.Point
 		  Var tmpX As Integer
 		  Var tmpY As Integer
 		  Var startX As Integer
 		  Var startY As Integer
 		  Var stopX As Integer
 		  Var stopY As Integer
-		  Var minXY as REALbasic.Point
-		  Var maxXY as REALbasic.Point
-		  Var srcRect(3) as REALbasic.Point
+		  Var minXY as Xojo.Point
+		  Var maxXY as Xojo.Point
+		  Var srcRect(3) as Xojo.Point
 		  Var transMatrix(8) As Double
 		  Var x As Integer
 		  Var y As Integer
@@ -428,22 +428,22 @@ Protected Module SVG
 		  tmpX = 0
 		  tmpY = 0
 		  transformPoint(tmpX, tmpY, matrix)
-		  destinationQuadrilateral.Add new REALbasic.Point(tmpX, tmpY)
+		  destinationQuadrilateral.Add new Xojo.Point(tmpX, tmpY)
 		  
 		  tmpX = srcWidth -1
 		  tmpY = 0
 		  transformPoint(tmpX, tmpY, matrix)
-		  destinationQuadrilateral.Add new REALbasic.Point(tmpX, tmpY)
+		  destinationQuadrilateral.Add new Xojo.Point(tmpX, tmpY)
 		  
 		  tmpX = srcWidth -1
 		  tmpY = srcHeight - 1
 		  transformPoint(tmpX, tmpY, matrix)
-		  destinationQuadrilateral.Add new REALbasic.Point(tmpX, tmpY)
+		  destinationQuadrilateral.Add new Xojo.Point(tmpX, tmpY)
 		  
 		  tmpX = 0
 		  tmpY = srcHeight - 1
 		  transformPoint(tmpX, tmpY, matrix)
-		  destinationQuadrilateral.Add new REALbasic.Point(tmpX, tmpY)
+		  destinationQuadrilateral.Add new Xojo.Point(tmpX, tmpY)
 		  
 		  ' get bounding rectangle of the quadrilateral
 		  
@@ -456,10 +456,10 @@ Protected Module SVG
 		  
 		  'calculate tranformation matrix
 		  
-		  srcRect(0) = new REALbasic.Point(0,0)
-		  srcRect(1) = new REALbasic.Point(srcWidth -1 ,0)
-		  srcRect(2) = new REALbasic.Point(srcWidth - 1, srcHeight - 1)
-		  srcRect(3) = new REALbasic.Point(0, srcHeight - 1)
+		  srcRect(0) = new Xojo.Point(0,0)
+		  srcRect(1) = new Xojo.Point(srcWidth -1 ,0)
+		  srcRect(2) = new Xojo.Point(srcWidth - 1, srcHeight - 1)
+		  srcRect(3) = new Xojo.Point(0, srcHeight - 1)
 		  transMatrix = MapQuadToQuad(destinationQuadrilateral, srcRect)
 		  
 		  tgtPic = new Picture(g.Width, g.Height)
@@ -518,7 +518,7 @@ Protected Module SVG
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub getBoundingRectangle(cloud() as REALbasic.Point, byref minXY as REALbasic.Point, byref maxXY as REALbasic.Point)
+		Private Sub getBoundingRectangle(cloud() as Xojo.Point, byref minXY as Xojo.Point, byref maxXY as Xojo.Point)
 		  Var minX as integer = 10e6
 		  Var maxX as integer = -10e6
 		  Var minY as integer = 10e6
@@ -532,8 +532,9 @@ Protected Module SVG
 		    if cloud(i).y > maxY then maxY = cloud(i).y
 		  next
 		  
-		  minXY = new REALbasic.Point(minX, minY)
-		  maxXY = new REALbasic.Point(maxX, maxY)
+		  minXY = new Xojo.Point(minX, minY)
+		  maxXY = new Xojo.Point(maxX, maxY)
+		  
 		End Sub
 	#tag EndMethod
 
@@ -659,7 +660,7 @@ Protected Module SVG
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Function mapQuadToQuad(Quad() as REALbasic.Point) As Double()
+		Private Function mapQuadToQuad(Quad() as Xojo.Point) As Double()
 		  Var sq(8) as Double
 		  Var px, py as Double
 		  
@@ -714,7 +715,7 @@ Protected Module SVG
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Function mapQuadToQuad(input() as REALbasic.Point, output() as REALbasic.Point) As Double()
+		Private Function mapQuadToQuad(input() as Xojo.Point, output() as Xojo.Point) As Double()
 		  Var squareToInput(8) as Double = MapQuadToQuad(input)
 		  Var squareToOutput(8) as Double = MapQuadToQuad(output)
 		  
