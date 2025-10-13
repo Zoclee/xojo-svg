@@ -33,7 +33,7 @@ Protected Module SVG
 		  
 		  i = 0
 		  while i < withItem.Count
-		    Item.Value(withItem.Name(i)) = withItem.Value(withItem.Name(i))
+		    Item.Value(withItem.KeyAt(i)) = withItem.Value(withItem.KeyAt(i))
 		    i = i + 1
 		  wend
 		  
@@ -56,7 +56,7 @@ Protected Module SVG
 		  while i < node.ChildCount
 		    if (not node.Child(i) IsA XMLTextNode) and _
 		      (not node.Child(i) IsA XMLComment) and _
-		       (not node.Child(i) IsA XMLProcessingInstruction) then
+		      (not node.Child(i) IsA XMLProcessingInstruction) then
 		      BuildNodeDictionary(node.Child(i))
 		    end if
 		    i = i + 1
@@ -76,7 +76,7 @@ Protected Module SVG
 		  Var className As String
 		  Var classProperties As JSONItem
 		  
-		  if mClasses.HasName(node.Name.Lowercase) then
+		  if mClasses.HasKey(node.Name.Lowercase) then
 		    classProperties = mClasses.Value(node.Name.Lowercase)
 		    result.ApplyValues classProperties
 		  end if
@@ -87,8 +87,8 @@ Protected Module SVG
 		    
 		    if xAttr.Name = "class" then
 		      
-		      className = Trim(Lowercase(node.GetAttribute(xAttr.Name)))
-		      if mClasses.HasName("." + className) then
+		      className = node.GetAttribute(xAttr.Name).Lowercase().Trim()
+		      if mClasses.HasKey("." + className) then
 		        classProperties = mClasses.Value("." + className)
 		        result.ApplyValues classProperties
 		      end if
@@ -99,9 +99,9 @@ Protected Module SVG
 		      
 		      styleArr = node.GetAttribute(xAttr.Name).Split(";")
 		      j = 0
-		      while j <= styleArr.Ubound
+		      while j <= styleArr.LastIndex
 		        itemArr = styleArr(j).Split(":")
-		        if itemArr.Ubound = 1 then
+		        if itemArr.LastIndex = 1 then
 		          result.Value(itemArr(0).Trim.Lowercase) = itemArr(1)
 		        end if
 		        j = j + 1
@@ -159,7 +159,7 @@ Protected Module SVG
 		        select case functionName
 		          
 		        case "matrix"
-		          if strArr.Ubound = 5 then
+		          if strArr.LastIndex = 5 then
 		            mulMatrix = matrix(val(strArr(0)), _ ' a
 		            val(strArr(1)), _ ' b
 		            val(strArr(2)), _ ' c
@@ -170,10 +170,10 @@ Protected Module SVG
 		          end if
 		          
 		        case "rotate"
-		          if strArr.Ubound = 0 then // around origin
+		          if strArr.LastIndex = 0 then // around origin
 		            mulMatrix = rotationMatrix(val(strArr(0)))
 		            result = matrixMultiply(result, mulMatrix)
-		          elseif strArr.Ubound = 2 then // around point
+		          elseif strArr.LastIndex = 2 then // around point
 		            mulMatrix = translationMatrix(val(strArr(1)), val(strArr(2)))
 		            result = matrixMultiply(result, mulMatrix)
 		            mulMatrix = rotationMatrix(val(strArr(0)))
@@ -183,7 +183,7 @@ Protected Module SVG
 		          end if
 		          
 		        case "scale"
-		          if strArr.Ubound >= 1 then
+		          if strArr.LastIndex >= 1 then
 		            mulMatrix = scaleMatrix(val(strArr(0)), val(strArr(1)))
 		          else
 		            mulMatrix = scaleMatrix(val(strArr(0)), val(strArr(0)))
@@ -191,19 +191,19 @@ Protected Module SVG
 		          result = matrixMultiply(result, mulMatrix)
 		          
 		        case "skewx"
-		          if strArr.Ubound >= 0 then
+		          if strArr.LastIndex >= 0 then
 		            mulMatrix = skewXMatrix(val(strArr(0)))
 		            result = matrixMultiply(result, mulMatrix)
 		          end if
 		          
 		        case "skewy"
-		          if strArr.Ubound >= 0 then
+		          if strArr.LastIndex >= 0 then
 		            mulMatrix = skewYMatrix(val(strArr(0)))
 		            result = matrixMultiply(result, mulMatrix)
 		          end if
 		          
 		        case "translate"
-		          if strArr.Ubound >= 1 then
+		          if strArr.LastIndex >= 1 then
 		            mulMatrix = translationMatrix(val(strArr(0)), val(strArr(1)))
 		          else
 		            mulMatrix = translationMatrix(val(strArr(0)), 0)
@@ -221,7 +221,7 @@ Protected Module SVG
 		      pos = 0
 		    end if
 		    
-		  loop until (pos >= Len(transform)) or (pos = 0)
+		  loop until (pos >= transform.Length) or (pos = 0)
 		  
 		  
 		  return result
@@ -239,8 +239,8 @@ Protected Module SVG
 		  Var colVariant As Variant
 		  Var tmpStr As String
 		  
-		  if Left(s, 1) = "#" then
-		    tmpStr = Right(s, Len(s) - 1)
+		  if s.Left(1) = "#" then
+		    tmpStr = Right(s, s.Length - 1)
 		  else
 		    tmpStr = s
 		  end if
@@ -299,7 +299,7 @@ Protected Module SVG
 		  "thistle" : &cd8bfd8, "tomato" : &cff6347, "turquoise" : &c40e0d0, "violet" : &cee82ee, "wheat" : &cf5deb3, "white" : &cffffff, _
 		  "whitesmoke" : &cf5f5f5, "yellow" : &cffff00, "yellowgreen" : &c9acd32)
 		  
-		  colStr = Lowercase(Trim(s))
+		  colStr = s.Trim().Lowercase()
 		  
 		  if ColorTable.HasKey(colStr) then
 		    col = ColorTable.Value(colStr)
@@ -309,7 +309,7 @@ Protected Module SVG
 		    if (startPos > 0) and (endPos > 0) then
 		      tmpStr = Mid(colStr, startPos + 1, endPos - startPos - 1)
 		      tmpArr = tmpStr.Split(",")
-		      if tmpArr.Ubound = 2 then
+		      if tmpArr.LastIndex = 2 then
 		        col = RGB(Val(tmpArr(0)), Val(tmpArr(1)), Val(tmpArr(2)))
 		      end if
 		    end if
@@ -420,22 +420,22 @@ Protected Module SVG
 		  tmpX = 0
 		  tmpY = 0
 		  transformPoint(tmpX, tmpY, matrix)
-		  destinationQuadrilateral.Append new REALbasic.Point(tmpX, tmpY)
+		  destinationQuadrilateral.Add new REALbasic.Point(tmpX, tmpY)
 		  
 		  tmpX = srcWidth -1
 		  tmpY = 0
 		  transformPoint(tmpX, tmpY, matrix)
-		  destinationQuadrilateral.Append new REALbasic.Point(tmpX, tmpY)
+		  destinationQuadrilateral.Add new REALbasic.Point(tmpX, tmpY)
 		  
 		  tmpX = srcWidth -1
 		  tmpY = srcHeight - 1
 		  transformPoint(tmpX, tmpY, matrix)
-		  destinationQuadrilateral.Append new REALbasic.Point(tmpX, tmpY)
+		  destinationQuadrilateral.Add new REALbasic.Point(tmpX, tmpY)
 		  
 		  tmpX = 0
 		  tmpY = srcHeight - 1
 		  transformPoint(tmpX, tmpY, matrix)
-		  destinationQuadrilateral.Append new REALbasic.Point(tmpX, tmpY)
+		  destinationQuadrilateral.Add new REALbasic.Point(tmpX, tmpY)
 		  
 		  ' get bounding rectangle of the quadrilateral
 		  
@@ -517,7 +517,7 @@ Protected Module SVG
 		  Var maxY as integer = -10e6
 		  
 		  Var i as integer
-		  for i = 0 to UBound(cloud)
+		  for i = 0 to cloud.LastIndex
 		    if cloud(i).x < minX then minX = cloud(i).x
 		    if cloud(i).x > maxX then maxX = cloud(i).x
 		    if cloud(i).y < minY then minY = cloud(i).y
@@ -564,7 +564,7 @@ Protected Module SVG
 		  Var propName As String
 		  Var propValue As String
 		  
-		  dataLen = len(styleData)
+		  dataLen = styleData.Length
 		  state = 0 // next class
 		  i = 1
 		  while i <= dataLen
@@ -778,7 +778,6 @@ Protected Module SVG
 	#tag Method, Flags = &h21
 		Private Sub process_defs(node As XmlNode)
 		  Var i As Integer
-		  Var id As String
 		  
 		  i = 0
 		  while i < node.ChildCount
@@ -1142,7 +1141,7 @@ Protected Module SVG
 		      //viewbox = viewbox.ReplaceAll("  ", " ")
 		      //wend
 		      //viewboxArr = viewbox.Split(" ")
-		      //if viewboxArr.Ubound = 3 then
+		      //if viewboxArr.LastIndex = 3 then
 		      //xScale = w / Val(viewboxArr(2)) 
 		      //yScale = h / Val(viewboxArr(3)) 
 		      //if xScale < yScale then
@@ -1532,65 +1531,65 @@ Protected Module SVG
 		  transformPoint tmpX, tmpY, matrix
 		  shape.MoveToPoint tmpX, tmpY
 		  
-		  d = Trim(style.LookupString("d", ""))
+		  d = style.LookupString("d", "").Trim()
 		  d = d.ReplaceAll(",", " ")
 		  
 		  pathMB = d
 		  
 		  Redim path(-1)
-		  path.Append ""
+		  path.Add ""
 		  i = 0
 		  while i < pathMB.Size
 		    ch = pathMB.StringValue(i, 1)
 		    
 		    if ch = " " then
 		      
-		      if path(path.Ubound) <> "" then
-		        path.Append ""
+		      if path(path.LastIndex) <> "" then
+		        path.Add ""
 		      end if
 		      
 		    elseif ch = "-" then
 		      
-		      if path(path.Ubound) <> "" then
-		        if right(path(path.Ubound), 1) = "e" then
-		          path(path.Ubound) = path(path.Ubound) + ch
+		      if path(path.LastIndex) <> "" then
+		        if right(path(path.LastIndex), 1) = "e" then
+		          path(path.LastIndex) = path(path.LastIndex) + ch
 		        else
-		          path.Append "-"
+		          path.Add "-"
 		        end if
 		      else
-		        path(path.Ubound) = ch
+		        path(path.LastIndex) = ch
 		      end if
 		      
 		    elseif not IsNumeric(ch) and (ch <> ".") and (ch <> "-") and (ch <> "e") then
 		      
-		      if path(path.Ubound) <> "" then
+		      if path(path.LastIndex) <> "" then
 		        path.Append ch
 		      else
-		        path(path.Ubound) = ch
+		        path(path.LastIndex) = ch
 		      end if
 		      path.Append ""
 		      
 		    elseif ch = "." then
 		      
-		      if Instr(0, path(path.Ubound), ".") > 0 then
+		      if Instr(0, path(path.LastIndex), ".") > 0 then
 		        path.Append "."
 		      else
-		        path(path.Ubound) = path(path.Ubound) + ch
+		        path(path.LastIndex) = path(path.LastIndex) + ch
 		      end if
 		      
 		    else
 		      
-		      path(path.Ubound) = path(path.Ubound) + ch
+		      path(path.LastIndex) = path(path.LastIndex) + ch
 		      
 		    end if
 		    i = i + 1
 		  wend
 		  
-		  if path(path.Ubound) = "" then
-		    path.Remove(path.Ubound)
+		  if path(path.LastIndex) = "" then
+		    path.Remove(path.LastIndex)
 		  end if
 		  
-		  if additionalPath.Ubound > 4 then
+		  if additionalPath.LastIndex > 4 then
 		    additionalPath.Append "z"
 		    if relativeCommand then
 		      additionalPath.Append "M"
@@ -1599,7 +1598,7 @@ Protected Module SVG
 		    end if
 		    
 		    i = 0
-		    while i <= additionalPath.Ubound
+		    while i <= additionalPath.LastIndex
 		      path.Insert(i, additionalPath(i))
 		      i = i + 1
 		    wend
@@ -1611,7 +1610,7 @@ Protected Module SVG
 		  prevQCommand = false
 		  
 		  i = 0
-		  while i <= path.Ubound
+		  while i <= path.LastIndex
 		    
 		    // absolute elliptical arc AND relative elliptical arc
 		    
@@ -1748,7 +1747,7 @@ Protected Module SVG
 		        penY = y2
 		        
 		        continueImplicit = false
-		        if i < path.Ubound then
+		        if i < path.LastIndex then
 		          if IsNumeric(path(i + 1)) then
 		            continueImplicit = true
 		          end if
@@ -1788,7 +1787,7 @@ Protected Module SVG
 		        shape.AddCurveToPoint controlX1, controlY1, controlX2, controlY2, tmpX, tmpY
 		        
 		        continueImplicit = false
-		        if i < path.Ubound then
+		        if i < path.LastIndex then
 		          if IsNumeric(path(i + 1)) then
 		            continueImplicit = true
 		          end if
@@ -1828,7 +1827,7 @@ Protected Module SVG
 		        shape.AddCurveToPoint controlX1, controlY1, controlX2, controlY2, tmpX, tmpY
 		        
 		        continueImplicit = false
-		        if i < path.Ubound then
+		        if i < path.LastIndex then
 		          if IsNumeric(path(i + 1)) then
 		            continueImplicit = true
 		          end if
@@ -1850,7 +1849,7 @@ Protected Module SVG
 		        shape.AddLineToPoint tmpX, tmpY
 		        
 		        continueImplicit = false
-		        if i < path.Ubound then
+		        if i < path.LastIndex then
 		          if IsNumeric(path(i + 1)) then
 		            continueImplicit = true
 		          end if
@@ -1872,7 +1871,7 @@ Protected Module SVG
 		        shape.AddLineToPoint tmpX, tmpY
 		        
 		        continueImplicit = false
-		        if i < path.Ubound then
+		        if i < path.LastIndex then
 		          if IsNumeric(path(i + 1)) then
 		            continueImplicit = true
 		          end if
@@ -1898,7 +1897,7 @@ Protected Module SVG
 		        shape.AddLineToPoint tmpX, tmpY
 		        
 		        continueImplicit = false
-		        if i < path.Ubound then
+		        if i < path.LastIndex then
 		          if IsNumeric(path(i + 1)) then
 		            continueImplicit = true
 		          end if
@@ -1923,7 +1922,7 @@ Protected Module SVG
 		        shape.AddLineToPoint tmpX, tmpY
 		        
 		        continueImplicit = false
-		        if i < path.Ubound then
+		        if i < path.LastIndex then
 		          if IsNumeric(path(i + 1)) then
 		            continueImplicit = true
 		          end if
@@ -1953,7 +1952,7 @@ Protected Module SVG
 		      
 		      do
 		        continueImplicit = false
-		        if i < (path.Ubound - 1) then
+		        if i < (path.LastIndex - 1) then
 		          if IsNumeric(path(i + 1)) then
 		            i = i + 1
 		            tmpX = Val(path(i))
@@ -1968,7 +1967,7 @@ Protected Module SVG
 		            continueImplicit = true
 		          end if
 		        end if
-		      loop until (i > path.Ubound) or not continueImplicit
+		      loop until (i > path.LastIndex) or not continueImplicit
 		      
 		      prevCCommand = false
 		      prevQCommand = false
@@ -1995,7 +1994,7 @@ Protected Module SVG
 		      
 		      do
 		        continueImplicit = false
-		        if i < (path.Ubound - 1) then
+		        if i < (path.LastIndex - 1) then
 		          if IsNumeric(path(i + 1)) then
 		            i = i + 1
 		            tmpX = Val(path(i))
@@ -2012,7 +2011,7 @@ Protected Module SVG
 		            continueImplicit = true
 		          end if
 		        end if
-		      loop until (i > path.Ubound) or not continueImplicit
+		      loop until (i > path.LastIndex) or not continueImplicit
 		      
 		      prevCCommand = false
 		      prevQCommand = false
@@ -2039,7 +2038,7 @@ Protected Module SVG
 		        shape.AddQuadraticCurveToPoint controlX1, controlY1, tmpX, tmpY
 		        
 		        continueImplicit = false
-		        if i < path.Ubound then
+		        if i < path.LastIndex then
 		          if IsNumeric(path(i + 1)) then
 		            continueImplicit = true
 		          end if
@@ -2077,7 +2076,7 @@ Protected Module SVG
 		        shape.AddQuadraticCurveToPoint prevControlX, prevControlY, tmpX, tmpY
 		        
 		        continueImplicit = false
-		        if i < path.Ubound then
+		        if i < path.LastIndex then
 		          if IsNumeric(path(i + 1)) then
 		            continueImplicit = true
 		          end if
@@ -2123,7 +2122,7 @@ Protected Module SVG
 		        shape.AddCurveToPoint controlX1, controlY1, controlX2, controlY2, tmpX, tmpY
 		        
 		        continueImplicit = false
-		        if i < path.Ubound then
+		        if i < path.LastIndex then
 		          if IsNumeric(path(i + 1)) then
 		            continueImplicit = true
 		          end if
@@ -2169,7 +2168,7 @@ Protected Module SVG
 		        shape.AddCurveToPoint controlX1, controlY1, controlX2, controlY2, tmpX, tmpY
 		        
 		        continueImplicit = false
-		        if i < path.Ubound then
+		        if i < path.LastIndex then
 		          if IsNumeric(path(i + 1)) then
 		            continueImplicit = true
 		          end if
@@ -2206,7 +2205,7 @@ Protected Module SVG
 		        shape.AddQuadraticCurveToPoint controlX1, controlY1, tmpX, tmpY
 		        
 		        continueImplicit = false
-		        if i < path.Ubound then
+		        if i < path.LastIndex then
 		          if IsNumeric(path(i + 1)) then
 		            continueImplicit = true
 		          end if
@@ -2254,7 +2253,7 @@ Protected Module SVG
 		        shape.AddQuadraticCurveToPoint controlX1, controlY1, tmpX, tmpY
 		        
 		        continueImplicit = false
-		        if i < path.Ubound then
+		        if i < path.LastIndex then
 		          if IsNumeric(path(i + 1)) then
 		            continueImplicit = true
 		          end if
@@ -2277,7 +2276,7 @@ Protected Module SVG
 		        shape.AddLineToPoint tmpX, tmpY
 		        
 		        continueImplicit = false
-		        if i < path.Ubound then
+		        if i < path.LastIndex then
 		          if IsNumeric(path(i + 1)) then
 		            continueImplicit = true
 		          end if
@@ -2301,7 +2300,7 @@ Protected Module SVG
 		        shape.AddLineToPoint tmpX, tmpY
 		        
 		        continueImplicit = false
-		        if i < path.Ubound then
+		        if i < path.LastIndex then
 		          if IsNumeric(path(i + 1)) then
 		            continueImplicit = true
 		          end if
@@ -2328,7 +2327,7 @@ Protected Module SVG
 		        e.ErrorNumber = Integer(SVGErrorEnum.ExpectedPathCommand)
 		        e.Message = "Expected path command: " + Str(path(i))
 		        Raise e
-		        i = path.Ubound
+		        i = path.LastIndex
 		      end if
 		      
 		      prevCCommand = false
@@ -2379,7 +2378,7 @@ Protected Module SVG
 		  For i = 0 To tmpArr.LastIndex
 		    If tmpArr(i).Trim <> "" Then
 		      coord = tmpArr(i).Split(",")
-		      If coord.Ubound = 1 Then
+		      If coord.LastIndex = 1 Then
 		        tmpX = Val(coord(0))
 		        tmpY = Val(coord(1))
 		        transformPoint tmpX, tmpY, matrix
@@ -2396,7 +2395,7 @@ Protected Module SVG
 		  For i = i + 1 To tmpArr.LastIndex
 		    If tmpArr(i).Trim = "" Then Continue
 		    coord = tmpArr(i).Split(",")
-		    If coord.Ubound = 1 Then
+		    If coord.LastIndex = 1 Then
 		      tmpX = Val(coord(0))
 		      tmpY = Val(coord(1))
 		      transformPoint tmpX, tmpY, matrix
@@ -2440,7 +2439,7 @@ Protected Module SVG
 		    
 		    i = 0
 		    coord = tmpArr(i).Split(",")
-		    if coord.Ubound = 1 then
+		    if coord.LastIndex = 1 then
 		      tmpX = Val(coord(0))
 		      tmpY = Val(coord(1))
 		      transformPoint tmpX, tmpY, matrix
@@ -2448,9 +2447,9 @@ Protected Module SVG
 		    path.MoveToPoint tmpX, tmpY
 		    
 		    i = i + 1
-		    while i <= tmpArr.Ubound
+		    while i <= tmpArr.LastIndex
 		      coord = tmpArr(i).Split(",")
-		      if coord.Ubound = 1 then
+		      if coord.LastIndex = 1 then
 		        tmpX = Val(coord(0))
 		        tmpY = Val(coord(1))
 		        transformPoint tmpX, tmpY, matrix
@@ -2665,7 +2664,7 @@ Protected Module SVG
 		  Var x As Double
 		  Var y As Double
 		  Var fill As String
-		  Var strShape as new StringShape
+		  Var strShape as new TextShape
 		  Var i As Integer
 		  
 		  style = new JSONItem("{}")
@@ -2730,21 +2729,21 @@ Protected Module SVG
 		        elementMatrix = matrixMultiply(matrix, mulMatrix)
 		        
 		        strShape.FillColor = determineColor(fill)
-		        strShape.TextFont = g.TextFont
-		        strShape.TextUnit = g.TextUnit
-		        strShape.TextSize = g.TextSize * elementMatrix(0)
+		        strShape.FontName = g.TextFont
+		        strShape.FontUnit = g.TextUnit
+		        strShape.FontSize = g.TextSize * elementMatrix(0)
 		        strShape.Bold = g.Bold
 		        select case elementStyle.Lookup("text-anchor", "start")
 		        case "end"
-		          strShape.HorizontalAlignment = StringShape.Alignment.Right
+		          strShape.HorizontalAlignment = TextShape.Alignment.Right
 		        case "middle"
-		          strShape.HorizontalAlignment = StringShape.Alignment.Left
+		          strShape.HorizontalAlignment = TextShape.Alignment.Left
 		          mulMatrix = translationMatrix(-g.StringWidth(textStr) / 2, 0)
 		          elementMatrix = matrixMultiply(elementMatrix, mulMatrix)
 		        case else
-		          strShape.HorizontalAlignment = StringShape.Alignment.Left
+		          strShape.HorizontalAlignment = TextShape.Alignment.Left
 		        end select
-		        strShape.VerticalAlignment = StringShape.Alignment.BaseLine
+		        strShape.VerticalAlignment = TextShape.Alignment.BaseLine
 		        strShape.Text = textStr
 		        
 		        // to speed up rendering and improve quality, we only use DrawTransformedPicture when needed

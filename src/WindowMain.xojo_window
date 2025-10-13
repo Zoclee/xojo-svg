@@ -104,7 +104,7 @@ End
 	#tag Event
 		Sub Pressed()
 		  Var f As FolderItem
-		  Var dlg As new OpenDialog
+		  Var dlg As new OpenFileDialog
 		  Var tis As TextInputStream
 		  Var svgType As new FileType
 		  
