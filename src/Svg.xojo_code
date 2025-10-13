@@ -141,17 +141,23 @@ Protected Module SVG
 		  pos = 0
 		  
 		  do
-		    pos = pos + 1
-		    openBracket = Instr(pos, transform, "(")
-		    if openBracket > 0 then
+		    //pos = pos + 1
+		    //openBracket = Instr(pos, transform, "(")
+		    openBracket = transform.IndexOf(pos, "(")
+		    //if openBracket > 0 then
+		    if openBracket >= 0 then
 		      
-		      closeBracket = Instr(openBracket, transform, ")")
+		      //closeBracket = Instr(openBracket, transform, ")")
+		      closeBracket = transform.IndexOf(openBracket, ")")
 		      if closeBracket > 0 then
 		        
-		        functionName = Lowercase(Trim(Mid(transform, pos, openBracket - pos)))
-		        parms = Mid(transform, openBracket + 1, closeBracket - openBracket - 1)
+		        //functionName = Lowercase(Trim(Mid(transform, pos, openBracket - pos)))
+		        functionName = transform.Middle(pos, openBracket - pos).Trim().Lowercase()
+		        //parms = Mid(transform, openBracket + 1, closeBracket - openBracket - 1)
+		        parms = transform.Middle(openBracket + 1, closeBracket - openBracket - 1)
 		        parms = parms.ReplaceAll(",", " ")
-		        while parms.InStr(0, "  ") > 0 
+		        //while parms.InStr(0, "  ") > 0 
+		        while parms.IndexOf(0, "  ") >= 0
 		          parms = parms.ReplaceAll("  ", " ")
 		        wend
 		        strArr = parms.Split(" ")
@@ -214,14 +220,16 @@ Protected Module SVG
 		        
 		        pos = closeBracket
 		      else
-		        pos = 0
+		        pos = -1
 		      end if
 		      
 		    else
-		      pos = 0
+		      pos = -1
 		    end if
 		    
-		  loop until (pos >= transform.Length) or (pos = 0)
+		    pos = pos + 1
+		    
+		  loop until (pos >= transform.Length) or (pos < 0)
 		  
 		  
 		  return result
@@ -240,13 +248,13 @@ Protected Module SVG
 		  Var tmpStr As String
 		  
 		  if s.Left(1) = "#" then
-		    tmpStr = Right(s, s.Length - 1)
+		    tmpStr = s.Right(s.Length - 1)
 		  else
 		    tmpStr = s
 		  end if
 		  
 		  if tmpStr.Length = 3 then
-		    tmpStr = Left(tmpStr, 1) + Left(tmpStr, 1) + Mid(tmpStr, 2, 1) + Mid(tmpStr, 2, 1) + Right(tmpStr, 1) + Right(tmpStr, 1)
+		    tmpStr = tmpStr.Left(1) + tmpStr.Left(1) + tmpStr.Middle(1, 1) + tmpStr.Middle(1, 1) + tmpStr.Right(1) + tmpStr.Right(1)
 		  end if
 		  
 		  tmpStr = "&c" + tmpStr
@@ -2725,7 +2733,7 @@ Protected Module SVG
 		          strShape.HorizontalAlignment = TextShape.Alignment.Right
 		        case "middle"
 		          strShape.HorizontalAlignment = TextShape.Alignment.Left
-		          mulMatrix = translationMatrix(-g.StringWidth(textStr) / 2, 0)
+		          mulMatrix = translationMatrix(-g.TextWidth(textStr) / 2, 0)
 		          elementMatrix = matrixMultiply(elementMatrix, mulMatrix)
 		        case else
 		          strShape.HorizontalAlignment = TextShape.Alignment.Left
@@ -2742,7 +2750,7 @@ Protected Module SVG
 		          g.DrawObject strShape, elementMatrix(2), elementMatrix(5)
 		          
 		        else
-		          element = new Picture(g.StringWidth(textStr), g.TextHeight)
+		          element = new Picture(g.TextWidth(textStr), g.TextHeight)
 		          eg = element.Graphics
 		          
 		          eg.DrawObject strShape, _
