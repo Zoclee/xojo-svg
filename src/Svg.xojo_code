@@ -1115,13 +1115,12 @@ Protected Module SVG
 		      w = 0
 		      h = 0
 		      
-		      //wStr = Trim(xdoc.Child(i).GetCIAttribute("width"))
-		      wStr = Trim(xdoc.Child(i).GetAttribute("width"))
+		      wStr = xdoc.Child(i).GetAttribute("width").Trim()
 		      if wStr <> "" then
 		        if IsNumeric(wStr) then
 		          w = Val(wStr)
-		        elseif Right(wStr, 1) = "%" then
-		          w = g.Width * (Val(Left(wStr, wStr.Length - 1)) / 100)
+		        elseif wStr.Right(1) = "%" then
+		          w = g.Width * (Val(wStr.Left(wStr.Length - 1)) / 100)
 		        end if
 		      end if
 		      
@@ -1129,8 +1128,8 @@ Protected Module SVG
 		      if hStr <> "" then
 		        if IsNumeric(hStr) then
 		          h = Val(hStr)
-		        elseif Right(hStr, 1) = "%" then
-		          h = g.Height * (Val(Left(hStr, hStr.Length - 1)) / 100)
+		        elseif hStr.Right(1) = "%" then
+		          h = g.Height * (Val(hStr.Left(hStr.Length - 1)) / 100)
 		        end if
 		      end if
 		      
@@ -1496,7 +1495,7 @@ Protected Module SVG
 		  matrix = matrixMultiply(parentMatrix, matrix)
 		  
 		  fill = style.LookupString("fill", "#000000")
-		  if (fill <> "none") and style.HasName("fill-opacity") then
+		  if (fill <> "none") and style.HasKey("fill-opacity") then
 		    if Val(style.Value("fill-opacity")) = 0 then
 		      fill = "none"
 		    elseif Val(style.Value("fill-opacity")) = 1 then
@@ -1559,7 +1558,7 @@ Protected Module SVG
 		    elseif ch = "-" then
 		      
 		      if path(path.LastIndex) <> "" then
-		        if right(path(path.LastIndex), 1) = "e" then
+		        if path(path.LastIndex).Right(1) = "e" then
 		          path(path.LastIndex) = path(path.LastIndex) + ch
 		        else
 		          path.Add "-"
@@ -1579,7 +1578,7 @@ Protected Module SVG
 		      
 		    elseif ch = "." then
 		      
-		      if Instr(0, path(path.LastIndex), ".") > 0 then
+		      if path(path.LastIndex).IndexOf(0, ".") >= 0 then
 		        path.Add "."
 		      else
 		        path(path.LastIndex) = path(path.LastIndex) + ch
@@ -1622,10 +1621,11 @@ Protected Module SVG
 		    
 		    // absolute elliptical arc AND relative elliptical arc
 		    
-		    if (StrComp(path(i), "A", 0) = 0) or (StrComp(path(i), "a", 0) = 0) then 
+		    if (path(i).Compare("A", ComparisonOptions.CaseSensitive) = 0) or _
+		      (path(i).Compare("a", ComparisonOptions.CaseSensitive) = 0) then 
 		      
 		      Var isAbsolute As Boolean
-		      if StrComp(path(i), "A", 0) = 0 then
+		      if path(i).Compare("A", ComparisonOptions.CaseSensitive) = 0 then
 		        isAbsolute = true
 		      else
 		        isAbsolute = false
@@ -1766,7 +1766,7 @@ Protected Module SVG
 		      prevCCommand = false
 		      prevQCommand = false
 		      
-		    elseif StrComp(path(i), "C", 0) = 0 then // absolute curveto
+		    elseif path(i).Compare("C", ComparisonOptions.CaseSensitive) = 0 then // absolute curveto
 		      do
 		        i = i + 1
 		        tmpX = Val(path(i))
@@ -1806,7 +1806,7 @@ Protected Module SVG
 		      prevCCommand = true
 		      prevQCommand = false
 		      
-		    elseif StrComp(path(i), "c", 0) = 0 then // relative curveto
+		    elseif path(i).Compare("c", ComparisonOptions.CaseSensitive) = 0 then // relative curveto
 		      do
 		        i = i + 1
 		        tmpX = penX + Val(path(i))
@@ -1846,7 +1846,7 @@ Protected Module SVG
 		      prevCCommand = true
 		      prevQCommand = false
 		      
-		    elseif StrComp(path(i), "H", 0) = 0 then // absolute horizontal lineto
+		    elseif path(i).Compare("H", ComparisonOptions.CaseSensitive) = 0 then // absolute horizontal lineto
 		      do
 		        i = i + 1
 		        tmpX = Val(path(i))
@@ -1868,7 +1868,7 @@ Protected Module SVG
 		      prevCCommand = false
 		      prevQCommand = false
 		      
-		    elseif StrComp(path(i), "h", 0) = 0 then // relative horizontal lineto
+		    elseif path(i).Compare("h", ComparisonOptions.CaseSensitive) = 0 then // relative horizontal lineto
 		      do
 		        i = i + 1
 		        tmpX = penX + Val(path(i))
@@ -1890,7 +1890,7 @@ Protected Module SVG
 		      prevCCommand = false
 		      prevQCommand = false
 		      
-		    elseif StrComp(path(i), "L", 0) = 0 then // absolute lineto
+		    elseif path(i).Compare("L", ComparisonOptions.CaseSensitive) = 0 then // absolute lineto
 		      
 		      do
 		        
@@ -1916,7 +1916,7 @@ Protected Module SVG
 		      prevCCommand = false
 		      prevQCommand = false
 		      
-		    elseif StrComp(path(i), "l", 0) = 0 then // relative lineto
+		    elseif path(i).Compare("l", ComparisonOptions.CaseSensitive) = 0 then // relative lineto
 		      
 		      do
 		        i = i + 1
@@ -1941,7 +1941,7 @@ Protected Module SVG
 		      prevCCommand = false
 		      prevQCommand = false
 		      
-		    elseif StrComp(path(i), "M", 0) = 0 then // absolute move
+		    elseif path(i).Compare("M", ComparisonOptions.CaseSensitive) = 0 then // absolute move
 		      
 		      i = i + 1
 		      tmpX = Val(path(i))
@@ -1980,7 +1980,7 @@ Protected Module SVG
 		      prevCCommand = false
 		      prevQCommand = false
 		      
-		    elseif StrComp(path(i), "m", 0) = 0 then // relative move
+		    elseif path(i).Compare("m", ComparisonOptions.CaseSensitive) = 0 then // relative move
 		      
 		      i = i + 1
 		      tmpX = Val(path(i))
@@ -2024,7 +2024,7 @@ Protected Module SVG
 		      prevCCommand = false
 		      prevQCommand = false
 		      
-		    elseif StrComp(path(i), "Q", 0) = 0 then // absolute quadratic Bézier curveto
+		    elseif path(i).Compare("Q", ComparisonOptions.CaseSensitive) = 0 then // absolute quadratic Bézier curveto
 		      do
 		        i = i + 1
 		        tmpX = Val(path(i))
@@ -2057,7 +2057,7 @@ Protected Module SVG
 		      prevCCommand = false
 		      prevQCommand = true
 		      
-		    elseif StrComp(path(i), "q", 0) = 0 then // relative quadratic Bézier curveto
+		    elseif path(i).Compare("q", ComparisonOptions.CaseSensitive) = 0 then // relative quadratic Bézier curveto
 		      do
 		        
 		        tmpX = penX
@@ -2095,7 +2095,7 @@ Protected Module SVG
 		      prevCCommand = false
 		      prevQCommand = true
 		      
-		    elseif StrComp(path(i), "S", 0) = 0 then // absolute smooth curveto
+		    elseif path(i).Compare("S", ComparisonOptions.CaseSensitive) = 0 then // absolute smooth curveto
 		      
 		      do
 		        
@@ -2141,7 +2141,7 @@ Protected Module SVG
 		      prevCCommand = true
 		      prevQCommand = false
 		      
-		    elseif StrComp(path(i), "s", 0) = 0 then // relative smooth curveto
+		    elseif path(i).Compare("s", ComparisonOptions.CaseSensitive) = 0 then // relative smooth curveto
 		      
 		      do
 		        
@@ -2187,7 +2187,7 @@ Protected Module SVG
 		      prevCCommand = true
 		      prevQCommand = false
 		      
-		    elseif StrComp(path(i), "T", 0) = 0 then // absolute smooth quadratic Bézier curveto
+		    elseif path(i).Compare("T", ComparisonOptions.CaseSensitive) = 0 then // absolute smooth quadratic Bézier curveto
 		      do
 		        tmpX = penX
 		        tmpY = penY 
@@ -2224,7 +2224,7 @@ Protected Module SVG
 		      prevCCommand = false
 		      prevQCommand = true
 		      
-		    elseif StrComp(path(i), "t", 0) = 0 then // relative smooth quadratic Bézier curveto
+		    elseif path(i).Compare("t", ComparisonOptions.CaseSensitive) = 0 then // relative smooth quadratic Bézier curveto
 		      do
 		        tmpX = penX
 		        tmpY = penY
@@ -2260,7 +2260,7 @@ Protected Module SVG
 		      prevCCommand = false
 		      prevQCommand = true
 		      
-		    elseif StrComp(path(i), "V", 0) = 0 then // absolute vertical lineto
+		    elseif path(i).Compare("V", ComparisonOptions.CaseSensitive) = 0 then // absolute vertical lineto
 		      
 		      do
 		        tmpX = penX
@@ -2283,7 +2283,7 @@ Protected Module SVG
 		      prevCCommand = false
 		      prevQCommand = false
 		      
-		    elseif StrComp(path(i), "v", 0) = 0 then // relative vertical lineto
+		    elseif path(i).Compare("v", ComparisonOptions.CaseSensitive) = 0 then // relative vertical lineto
 		      
 		      do
 		        
