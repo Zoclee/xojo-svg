@@ -3,15 +3,15 @@ Protected Module SVG
 	#tag Method, Flags = &h21
 		Private Function angleBetweenVectors(ux As Double, uy As Double, vx As Double, vy As Double) As Double
 		  // Angle of vector V from the positive X-axis
-		  Dim angleV As Double
+		  Var angleV As Double
 		  angleV = Atan2(vy, vx) * (180 / Acos(-1)) // Convert Radians to Degrees
 		  
 		  // Angle of vector U from the positive X-axis
-		  Dim angleU As Double
+		  Var angleU As Double
 		  angleU = Atan2(uy, ux) * (180 / Acos(-1)) // Convert Radians to Degrees
 		  
 		  // Calculate the difference
-		  Dim angleDelta As Double = angleV - angleU
+		  Var angleDelta As Double = angleV - angleU
 		  
 		  // Normalize the angle to be within [0, 360) degrees
 		  // Use Modulo operator for normalization
@@ -552,7 +552,7 @@ Protected Module SVG
 
 	#tag Method, Flags = &h21
 		Private Function isTranslationMatrix(matrix() As Double) As Boolean
-		  Dim result As Boolean
+		  Var result As Boolean
 		  
 		  result = (matrix(0) = 1) and (matrix(1) = 0) and (matrix(3) = 0) and (matrix(4) = 1) and _
 		  (matrix(6) = 0) and (matrix(7) = 0) and (matrix(8) = 1)
@@ -575,9 +575,9 @@ Protected Module SVG
 		  
 		  dataLen = styleData.Length
 		  state = 0 // next class
-		  i = 1
-		  while i <= dataLen
-		    ch = Mid(styleData, i, 1)
+		  i = 0
+		  while i < dataLen
+		    ch = styleData.Middle(i, 1)
 		    
 		    if Asc(ch) <= 32 then
 		      // do nothing
@@ -626,14 +626,14 @@ Protected Module SVG
 
 	#tag Method, Flags = &h21
 		Private Function loadImage(data As String) As Picture
-		  Dim image As Picture
-		  Dim alphaImage As Picture
-		  Dim imageData As MemoryBlock
-		  Dim commaPos As Integer
+		  Var image As Picture
+		  Var alphaImage As Picture
+		  Var imageData As MemoryBlock
+		  Var commaPos As Integer
 		  
-		  commaPos = Instr(0, data, ",")
-		  if commaPos > 0 then
-		    imageData = DecodeBase64(Right(data, data.Length - commaPos))
+		  commaPos = data.IndexOf(0, ",")
+		  if commaPos >= 0 then
+		    imageData = DecodeBase64(data.Right(data.Length - commaPos))
 		    image = Picture.FromData(imageData)
 		    alphaImage = new Picture(image.Width, image.Height)
 		    alphaImage.Graphics.DrawPicture image, 0, 0
@@ -683,7 +683,7 @@ Protected Module SVG
 		    sq(8) = 1.0
 		  else
 		    
-		    dim dx1, dx2, dy1, dy2, del as Double
+		    Var dx1, dx2, dy1, dy2, del as Double
 		    
 		    dx1 = quad(1).X - quad(2).X
 		    dx2 = quad(3).X - quad(2).X
@@ -953,7 +953,7 @@ Protected Module SVG
 		    if mNodes.HasKey(brushId) then
 		      fillBrush = mNodes.Value(brushId)
 		    end if
-		  elseif (fill <> "none") and style.HasName("fill-opacity") then
+		  elseif (fill <> "none") and style.HasKey("fill-opacity") then
 		    if Val(style.Value("fill-opacity")) = 0 then
 		      fill = "none"
 		    else
@@ -1338,16 +1338,16 @@ Protected Module SVG
 	#tag Method, Flags = &h21
 		Private Sub render_image(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
 		  
-		  Dim localStyle As JSONItem
-		  Dim style As JSONItem
-		  Dim matrix() As Double
-		  Dim mulMatrix() As Double
-		  Dim imageData As String
-		  Dim image As Picture
-		  Dim x As Double
-		  Dim y As Double
-		  Dim width As Double
-		  Dim height As Double
+		  Var localStyle As JSONItem
+		  Var style As JSONItem
+		  Var matrix() As Double
+		  Var mulMatrix() As Double
+		  Var imageData As String
+		  Var image As Picture
+		  Var x As Double
+		  Var y As Double
+		  Var width As Double
+		  Var height As Double
 		  
 		  style = new JSONItem("{}")
 		  style.ApplyValues parentStyle
@@ -2408,10 +2408,10 @@ Protected Module SVG
 
 	#tag Method, Flags = &h21
 		Private Sub render_polyline(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
-		  Dim localStyle As JSONItem
-		  Dim style As JSONItem
-		  Dim matrix() As Double
-		  Dim i As Integer
+		  Var localStyle As JSONItem
+		  Var style As JSONItem
+		  Var matrix() As Double
+		  Var i As Integer
 		  Var tmpX As Double
 		  Var tmpY As Double
 		  Var tmpArr() As String
