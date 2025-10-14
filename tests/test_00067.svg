@@ -1,0 +1,15 @@
+<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="radGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="yellow"></stop>
+      <stop offset="50%" stop-color="orange"></stop>
+      <stop offset="100%" stop-color="red"></stop>
+    </radialGradient>
+  </defs>
+
+  <!-- Background for contrast -->
+  <rect width="100%" height="100%" fill="lightgray"></rect>
+
+  <!-- Circle filled with the radial gradient -->
+  <circle cx="100" cy="100" r="80" fill="url(#radGrad)" stroke="black" stroke-width="2"></circle>
+</svg>
