@@ -2720,6 +2720,10 @@ Protected Module SVG
 		        if elementStyle.LookupString("font-weight", "") = "bold" then
 		          g.Bold = true
 		        end if
+		        g.Italic = false
+		        if elementStyle.LookupString("font-style", "") = "italic" then
+		          g.Italic = true
+		        end if
 		        
 		        mulMatrix = translationMatrix(x, y)
 		        elementMatrix = matrixMultiply(matrix, mulMatrix)
@@ -2729,6 +2733,7 @@ Protected Module SVG
 		        strShape.FontUnit = g.FontUnit
 		        strShape.FontSize = g.FontSize * elementMatrix(0)
 		        strShape.Bold = g.Bold
+		        strShape.Italic = g.Italic
 		        select case elementStyle.Lookup("text-anchor", "start")
 		        case "end"
 		          strShape.HorizontalAlignment = TextShape.Alignment.Right
