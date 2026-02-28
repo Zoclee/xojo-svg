@@ -1,6 +1,18 @@
 #tag Class
 Protected Class SVGPicture
 	#tag Method, Flags = &h0
+		Shared Function FromData(data As MemoryBlock) As SVG.SVGPicture
+		  Var img As SVG.SVGPicture
+		  
+		  img = new SVG.SVGPicture()
+		  img.SVGString = data
+		  
+		  return img
+		  
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub InitProperties()
 		  Var foundProps As Boolean
 		  Var i As Integer

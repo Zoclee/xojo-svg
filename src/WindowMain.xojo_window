@@ -79,13 +79,13 @@ Begin DesktopWindow WindowMain
       Transparent     =   False
       Underline       =   False
       Visible         =   True
-      Width           =   120
+      Width           =   175
    End
-   Begin DesktopButton ButtonOpenSVG
+   Begin DesktopButton ButtonSVGPictureOpen
       AllowAutoDeactivate=   True
       Bold            =   False
       Cancel          =   False
-      Caption         =   "Test SVGPicture"
+      Caption         =   "Test SVGPicture.Open"
       Default         =   False
       Enabled         =   True
       FontName        =   "System"
@@ -94,7 +94,7 @@ Begin DesktopWindow WindowMain
       Height          =   27
       Index           =   -2147483648
       Italic          =   False
-      Left            =   152
+      Left            =   207
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   True
@@ -110,7 +110,38 @@ Begin DesktopWindow WindowMain
       Transparent     =   False
       Underline       =   False
       Visible         =   True
-      Width           =   120
+      Width           =   175
+   End
+   Begin DesktopButton ButtonSVGPictureFromData
+      AllowAutoDeactivate=   True
+      Bold            =   False
+      Cancel          =   False
+      Caption         =   "Test SVGPicture.FromData"
+      Default         =   False
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   0.0
+      FontUnit        =   0
+      Height          =   27
+      Index           =   -2147483648
+      Italic          =   False
+      Left            =   394
+      LockBottom      =   False
+      LockedInPosition=   False
+      LockLeft        =   True
+      LockRight       =   False
+      LockTop         =   True
+      MacButtonStyle  =   0
+      Scope           =   0
+      TabIndex        =   3
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Tooltip         =   ""
+      Top             =   20
+      Transparent     =   False
+      Underline       =   False
+      Visible         =   True
+      Width           =   175
    End
 End
 #tag EndDesktopWindow
@@ -173,14 +204,12 @@ End
 		End Sub
 	#tag EndEvent
 #tag EndEvents
-#tag Events ButtonOpenSVG
+#tag Events ButtonSVGPictureOpen
 	#tag Event
 		Sub Pressed()
 		  Var f As FolderItem
 		  Var dlg As new OpenFileDialog
-		  Var tis As TextInputStream
 		  Var svgType As new FileType
-		  Var img As SVG.SVGPicture
 		  
 		  svgType.Name = "Scalable Vector Graphics"
 		  svgType.Extensions = ".svg"
@@ -200,6 +229,43 @@ End
 		    CanvasPreview.Refresh(false)
 		    
 		  end if
+		  
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events ButtonSVGPictureFromData
+	#tag Event
+		Sub Pressed()
+		  Var f As FolderItem
+		  Var dlg As new OpenFileDialog
+		  Var tis As TextInputStream
+		  Var svgType As new FileType
+		  Var tmpStr As String
+		  
+		  svgType.Name = "Scalable Vector Graphics"
+		  svgType.Extensions = ".svg"
+		  
+		  dlg.Filter = svgType
+		  
+		  f = dlg.ShowModal()
+		  
+		  if f <> nil then
+		    
+		    SVGString = ""
+		    SVGImage = nil
+		    
+		    Self.Title = "Xojo SVG - " + f.NativePath
+		    
+		    tis = TextInputStream.Open(f)
+		    tmpStr = tis.ReadAll()
+		    tis.Close
+		    
+		    SVGImage = SVG.SVGPicture.FromData(tmpStr)
+		    
+		    CanvasPreview.Refresh(false)
+		    
+		  end if
+		  
 		  
 		End Sub
 	#tag EndEvent
