@@ -50,11 +50,11 @@ Begin DesktopWindow WindowMain
       Visible         =   True
       Width           =   600
    End
-   Begin DesktopButton ButtonOpenSVG
+   Begin DesktopButton ButtonDrawSVG
       AllowAutoDeactivate=   True
       Bold            =   False
       Cancel          =   False
-      Caption         =   "Open SVG"
+      Caption         =   "Draw SVG"
       Default         =   False
       Enabled         =   True
       FontName        =   "System"
@@ -72,6 +72,37 @@ Begin DesktopWindow WindowMain
       MacButtonStyle  =   0
       Scope           =   0
       TabIndex        =   1
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Tooltip         =   ""
+      Top             =   20
+      Transparent     =   False
+      Underline       =   False
+      Visible         =   True
+      Width           =   120
+   End
+   Begin DesktopButton ButtonOpenSVG
+      AllowAutoDeactivate=   True
+      Bold            =   False
+      Cancel          =   False
+      Caption         =   "Open SVG"
+      Default         =   False
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   0.0
+      FontUnit        =   0
+      Height          =   27
+      Index           =   -2147483648
+      Italic          =   False
+      Left            =   152
+      LockBottom      =   False
+      LockedInPosition=   False
+      LockLeft        =   True
+      LockRight       =   False
+      LockTop         =   True
+      MacButtonStyle  =   0
+      Scope           =   0
+      TabIndex        =   2
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
@@ -100,7 +131,7 @@ End
 		End Sub
 	#tag EndEvent
 #tag EndEvents
-#tag Events ButtonOpenSVG
+#tag Events ButtonDrawSVG
 	#tag Event
 		Sub Pressed()
 		  Var f As FolderItem
@@ -122,6 +153,38 @@ End
 		    tis = TextInputStream.Open(f)
 		    SVGString = tis.ReadAll()
 		    tis.Close
+		    
+		    CanvasPreview.Refresh(false)
+		    
+		  end if
+		  
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events ButtonOpenSVG
+	#tag Event
+		Sub Pressed()
+		  Var f As FolderItem
+		  Var dlg As new OpenFileDialog
+		  Var tis As TextInputStream
+		  Var svgType As new FileType
+		  Var img As SVG.SVGPicture
+		  
+		  svgType.Name = "Scalable Vector Graphics"
+		  svgType.Extensions = ".svg"
+		  
+		  dlg.Filter = svgType
+		  
+		  f = dlg.ShowModal()
+		  
+		  if f <> nil then
+		    
+		    Self.Title = "Xojo SVG - " + f.NativePath
+		    
+		    //tis = TextInputStream.Open(f)
+		    //SVGString = tis.ReadAll()
+		    //tis.Close
+		    img = SVG.SVGPicture.Open(f)
 		    
 		    CanvasPreview.Refresh(false)
 		    
