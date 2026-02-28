@@ -54,7 +54,7 @@ Begin DesktopWindow WindowMain
       AllowAutoDeactivate=   True
       Bold            =   False
       Cancel          =   False
-      Caption         =   "Draw SVG"
+      Caption         =   "Test DrawSVG"
       Default         =   False
       Enabled         =   True
       FontName        =   "System"
@@ -85,7 +85,7 @@ Begin DesktopWindow WindowMain
       AllowAutoDeactivate=   True
       Bold            =   False
       Cancel          =   False
-      Caption         =   "Open SVG"
+      Caption         =   "Test SVGPicture"
       Default         =   False
       Enabled         =   True
       FontName        =   "System"
@@ -117,6 +117,10 @@ End
 
 #tag WindowCode
 	#tag Property, Flags = &h0
+		SVGImage As SVG.SVGPicture
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
 		SVGString As String
 	#tag EndProperty
 
@@ -126,7 +130,12 @@ End
 #tag Events CanvasPreview
 	#tag Event
 		Sub Paint(g As Graphics, areas() As Rect)
-		  g.DrawSVG SVGString, 0, 0
+		  if SVGString <> "" then
+		    g.DrawSVG SVGString, 0, 0
+		  elseif SVGImage <> nil then
+		    g.DrawPicture SVGImage.ToPicture(), 0, 0
+		  end if
+		  
 		  
 		End Sub
 	#tag EndEvent
@@ -147,6 +156,9 @@ End
 		  f = dlg.ShowModal()
 		  
 		  if f <> nil then
+		    
+		    SVGString = ""
+		    SVGImage = nil
 		    
 		    Self.Title = "Xojo SVG - " + f.NativePath
 		    
@@ -179,13 +191,12 @@ End
 		  
 		  if f <> nil then
 		    
+		    SVGString = ""
+		    SVGImage = nil
+		    
 		    Self.Title = "Xojo SVG - " + f.NativePath
 		    
-		    //tis = TextInputStream.Open(f)
-		    //SVGString = tis.ReadAll()
-		    //tis.Close
-		    img = SVG.SVGPicture.Open(f)
-		    
+		    SVGImage = SVG.SVGPicture.Open(f)
 		    CanvasPreview.Refresh(false)
 		    
 		  end if

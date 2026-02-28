@@ -1,6 +1,34 @@
 #tag Class
 Protected Class SVGPicture
 	#tag Method, Flags = &h0
+		Sub InitProperties()
+		  Var foundProps As Boolean
+		  Var i As Integer
+		  Var node As XMLNode
+		  
+		  mWidth = 0
+		  mHeight = 0
+		  
+		  if mSVGDocument <> nil then
+		    
+		    foundProps = false
+		    i = 0
+		    while (i < mSVGDocument.ChildCount) and not foundProps
+		      node = mSVGDocument.Child(i)
+		      if node.Name = "svg" then
+		        mWidth = Val(node.GetAttribute("width"))
+		        mHeight = Val(node.GetAttribute("height"))
+		        foundProps = true
+		      end if
+		      i = i + 1
+		    wend
+		    
+		  end if
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Shared Function Open(file As FolderItem) As SVG.SVGPicture
 		  Var img As SVG.SVGPicture
 		  Var tis As TextInputStream
@@ -16,10 +44,66 @@ Protected Class SVGPicture
 		End Function
 	#tag EndMethod
 
+	#tag Method, Flags = &h0
+		Function ToPicture() As Picture
+		  if mPicture = nil then
+		    if mWidth > 0 and mHeight > 0 then
+		      mPicture = new Picture(mWidth, mHeight)
+		      mPicture.Graphics.DrawSVG(mSVGDocument, 0, 0, mWidth, mHeight)
+		    end if
+		  end if
+		  
+		  return mPicture
+		  
+		End Function
+	#tag EndMethod
+
+
+	#tag ComputedProperty, Flags = &h0
+		#tag Getter
+			Get
+			  Return mHeight
+			End Get
+		#tag EndGetter
+		Height As Integer
+	#tag EndComputedProperty
+
+	#tag Property, Flags = &h21
+		Private mHeight As Integer
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		mPicture As Picture
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mSVGDocument As XmlDocument
+	#tag EndProperty
 
 	#tag Property, Flags = &h21
 		Private mSVGString As String
 	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mWidth As Integer
+	#tag EndProperty
+
+	#tag ComputedProperty, Flags = &h0
+		#tag Getter
+			Get
+			  Return mSVGDocument
+			End Get
+		#tag EndGetter
+		#tag Setter
+			Set
+			  mSVGDocument = value
+			  mSVGString = mSVGDocument.ToString()
+			  
+			  InitProperties()
+			End Set
+		#tag EndSetter
+		SVGDocument As XmlDocument
+	#tag EndComputedProperty
 
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
@@ -29,10 +113,44 @@ Protected Class SVGPicture
 		#tag EndGetter
 		#tag Setter
 			Set
+			  Var e As SVG.SVGException
+			  
 			  mSVGString = value
+			  
+			  mSVGDocument = nil
+			  
+			  if mSVGString.Length > 0 then
+			    
+			    try
+			      
+			      mSVGDocument = new XmlDocument(mSVGString)
+			      InitProperties()
+			      
+			    catch xmlException As XmlException
+			      
+			      // invalid xml, so raise an exception
+			      
+			      e = new SVG.SVGException()
+			      e.ErrorNumber = Integer(SVGErrorEnum.MalformedXML)
+			      e.Message = "Malformed XML."
+			      Raise e
+			      
+			    end try
+			    
+			  end if
+			  
 			End Set
 		#tag EndSetter
 		SVGString As String
+	#tag EndComputedProperty
+
+	#tag ComputedProperty, Flags = &h0
+		#tag Getter
+			Get
+			  Return mWidth
+			End Get
+		#tag EndGetter
+		Width As Integer
 	#tag EndComputedProperty
 
 
