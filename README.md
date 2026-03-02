@@ -16,10 +16,21 @@ Copy the SVG module from the project located in the [source folder](https://gith
 	// Draw SVG stored in an XMLDocument object
 	
 	Sub Paint(g As Graphics, areas() As REALbasic.Rect)
-		Dim myDoc As XmlDocument
+		Var myDoc As XmlDocument
 		myDoc = new XmlDocument("Some SVG XML")
 		g.DrawSVG myDoc, 100, 100
 	End Sub	
+
+	// Load an SVG file into SVGPicture and render it as a Picture
+
+	Sub Paint(g As Graphics, areas() As REALbasic.Rect)
+		Var svgFile As FolderItem = SpecialFolder.Desktop.Child("test.svg")
+		Var svgPic As SVG.SVGPicture = SVG.SVGPicture.Open(svgFile)
+		Var p As Picture = svgPic.ToPicture()
+		If p <> Nil Then
+			g.DrawPicture(p, 0, 0)
+		End If
+	End Sub
 
 ## Support the Project
 
