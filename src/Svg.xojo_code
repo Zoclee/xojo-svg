@@ -2687,6 +2687,13 @@ Protected Module SVG
 		  Var textStr As String
 		  Var x As Double
 		  Var y As Double
+		  Var penX As Double
+		  Var penY As Double
+		  Var hasDrawnText As Boolean
+		  Var childNode As XmlNode
+		  Var j As Integer
+		  Var elementFill As String
+		  Var advanceWidth As Double
 		  Var fill As String
 		  Var strShape as new TextShape
 		  Var i As Integer
@@ -2698,8 +2705,11 @@ Protected Module SVG
 		  matrix = buildTransformationMatrix(localStyle.Lookup("transform", ""))
 		  matrix = matrixMultiply(parentMatrix, matrix)
 		  
-		  x = style.LookupDouble("x")
-		  y = style.LookupDouble("y")
+		  x = Val(style.LookupString("x", "0"))
+		  y = Val(style.LookupString("y", "0"))
+		  penX = x
+		  penY = y
+		  hasDrawnText = false
 		  fill = style.LookupString("fill", "#000000")
 		  if (fill <> "none") and style.HasKey("fill-opacity") then
 		    if Val(style.Value("fill-opacity")) = 0 then
@@ -2711,39 +2721,63 @@ Protected Module SVG
 		    end if
 		  end if
 		  
-		  // fill
-		  
-		  if fill <> "none" then
-		    
-		    i = 0
-		    while i < node.ChildCount
+		  i = 0
+		  while i < node.ChildCount
 		      
 		      textStr = ""
+		      childNode = node.Child(i)
 		      
 		      elementStyle = new JSONItem(style.ToString())
 		      
-		      if node.Child(i).Name = "#text" then
-		        textStr = node.FirstChild.Value.Trim()
-		      elseif node.Child(i).Name = "tspan" then
+		      if childNode.Name = "#text" then
+		        textStr = childNode.Value
+		      elseif childNode.Name = "tspan" then
 		        
-		        tspanStyle = buildStyleItem(node.Child(i))
+		        tspanStyle = buildStyleItem(childNode)
 		        elementStyle.ApplyValues(tspanStyle)
-		        if node.Child(i).FirstChild <> nil then
-		          if node.Child(i).FirstChild.Name = "#text" then
-		            textStr = node.Child(i).FirstChild.Value.Trim()
+		        j = 0
+		        while j < childNode.ChildCount
+		          if childNode.Child(j).Name = "#text" then
+		            textStr = textStr + childNode.Child(j).Value
 		          end if
+		          j = j + 1
+		        wend
+		        textStr = textStr.Trim()
+		        
+		        if tspanStyle.HasKey("x") then
+		          penX = Val(elementStyle.LookupString("x", Str(penX)))
+		        end if
+		        if tspanStyle.HasKey("y") then
+		          penY = Val(elementStyle.LookupString("y", Str(penY)))
+		        end if
+		        if tspanStyle.HasKey("dx") then
+		          penX = penX + Val(elementStyle.LookupString("dx", "0"))
+		        end if
+		        if tspanStyle.HasKey("dy") then
+		          penY = penY + Val(elementStyle.LookupString("dy", "0"))
 		        end if
 		        
-		        x = elementStyle.LookupDouble("x")
-		        y = elementStyle.LookupDouble("y")
-		        
+		      end if
+		      
+		      textStr = textStr.ReplaceLineEndings(" ")
+		      textStr = textStr.ReplaceAll(Chr(9), " ")
+		      while textStr.IndexOf("  ") >= 0
+		        textStr = textStr.ReplaceAll("  ", " ")
+		      wend
+		      if not hasDrawnText then
+		        while (textStr.Length > 0) and (textStr.Left(1) = " ")
+		          textStr = textStr.Middle(1)
+		        wend
 		      end if
 		      
 		      if textStr <> "" then
 		        
 		        g.FontName = elementStyle.LookupString("font-family", "Arial")
 		        g.FontUnit = FontUnits.Pixel
-		        g.FontSize = elementStyle.LookupDouble("font-size", 16)
+		        g.FontSize = Val(elementStyle.LookupString("font-size", "16"))
+		        if g.FontSize <= 0 then
+		          g.FontSize = 16
+		        end if
 		        g.Bold = false
 		        if elementStyle.LookupString("font-weight", "") = "bold" then
 		          g.Bold = true
@@ -2753,54 +2787,65 @@ Protected Module SVG
 		          g.Italic = true
 		        end if
 		        
-		        mulMatrix = translationMatrix(x, y)
+		        advanceWidth = g.TextWidth(textStr)
+		        elementFill = elementStyle.LookupString("fill", fill)
+		        if (elementFill <> "none") and elementStyle.HasKey("fill-opacity") then
+		          if Val(elementStyle.Value("fill-opacity")) = 0 then
+		            elementFill = "none"
+		          end if
+		        end if
+		        
+		        mulMatrix = translationMatrix(penX, penY)
 		        elementMatrix = matrixMultiply(matrix, mulMatrix)
 		        
-		        strShape.FillColor = determineColor(fill)
-		        strShape.FontName = g.FontName
-		        strShape.FontUnit = g.FontUnit
-		        strShape.FontSize = g.FontSize * elementMatrix(0)
-		        strShape.Bold = g.Bold
-		        strShape.Italic = g.Italic
-		        select case elementStyle.Lookup("text-anchor", "start")
-		        case "end"
-		          strShape.HorizontalAlignment = TextShape.Alignment.Right
-		        case "middle"
-		          strShape.HorizontalAlignment = TextShape.Alignment.Left
-		          mulMatrix = translationMatrix(-g.TextWidth(textStr) / 2, 0)
-		          elementMatrix = matrixMultiply(elementMatrix, mulMatrix)
-		        case else
-		          strShape.HorizontalAlignment = TextShape.Alignment.Left
-		        end select
-		        strShape.VerticalAlignment = TextShape.Alignment.BaseLine
-		        strShape.Text = textStr
-		        
-		        // to speed up rendering and improve quality, we only use DrawTransformedPicture when needed
-		        
-		        if (elementMatrix(1) = 0) and (elementMatrix(3) = 0)  and (elementMatrix(6) = 0) and _
-		          (elementMatrix(7) = 0) and (elementMatrix(8) = 1) and _
-		          (elementMatrix(0) = elementMatrix(4)) then
+		        if elementFill <> "none" then
+		          strShape.FillColor = determineColor(elementFill)
+		          strShape.FontName = g.FontName
+		          strShape.FontUnit = g.FontUnit
+		          strShape.FontSize = g.FontSize * elementMatrix(0)
+		          strShape.Bold = g.Bold
+		          strShape.Italic = g.Italic
+		          select case elementStyle.Lookup("text-anchor", "start")
+		          case "end"
+		            strShape.HorizontalAlignment = TextShape.Alignment.Right
+		          case "middle"
+		            strShape.HorizontalAlignment = TextShape.Alignment.Left
+		            mulMatrix = translationMatrix(-advanceWidth / 2, 0)
+		            elementMatrix = matrixMultiply(elementMatrix, mulMatrix)
+		          case else
+		            strShape.HorizontalAlignment = TextShape.Alignment.Left
+		          end select
+		          strShape.VerticalAlignment = TextShape.Alignment.BaseLine
+		          strShape.Text = textStr
 		          
-		          g.DrawObject strShape, elementMatrix(2), elementMatrix(5)
+		          // to speed up rendering and improve quality, we only use DrawTransformedPicture when needed
 		          
-		        else
-		          element = new Picture(g.TextWidth(textStr), g.TextHeight)
-		          eg = element.Graphics
-		          
-		          eg.DrawObject strShape, _
-		          0, _
-		          0
-		          
-		          g.DrawTransformedPicture element, elementMatrix
+		          if (elementMatrix(1) = 0) and (elementMatrix(3) = 0)  and (elementMatrix(6) = 0) and _
+		            (elementMatrix(7) = 0) and (elementMatrix(8) = 1) and _
+		            (elementMatrix(0) = elementMatrix(4)) then
+		            
+		            g.DrawObject strShape, elementMatrix(2), elementMatrix(5)
+		            
+		          else
+		            element = new Picture(Max(1, advanceWidth), Max(1, g.TextHeight))
+		            eg = element.Graphics
+		            
+		            eg.DrawObject strShape, _
+		            0, _
+		            0
+		            
+		            g.DrawTransformedPicture element, elementMatrix
+		          end if
 		        end if
+		        
+		        penX = penX + advanceWidth
+		        hasDrawnText = true
 		        
 		      end if
 		      
 		      i = i + 1
 		      
 		    wend
-		    
-		  end if
 		End Sub
 	#tag EndMethod
 
