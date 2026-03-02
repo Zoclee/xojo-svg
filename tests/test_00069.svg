@@ -1,0 +1,47 @@
+<?xml version="1.0" standalone="no"?>
+<svg width="600" height="300"
+     xmlns="http://www.w3.org/2000/svg"
+     version="1.1">
+
+  <style>
+    .baseText {
+      font-family: Verdana;
+      font-size: 24px;
+      fill: black;
+    }
+  </style>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="600" height="300" fill="#f4f4f4"/>
+
+  <!-- Test 1: Basic inheritance -->
+  <text class="baseText" x="50" y="60">
+    Normal 
+    <tspan fill="red">Red</tspan>
+    Normal
+  </text>
+
+  <!-- Test 2: Font size + weight override -->
+  <text class="baseText" x="50" y="110">
+    Small 
+    <tspan font-size="40px" font-weight="bold" fill="#0066cc">
+      LargeBoldBlue
+    </tspan>
+    Small
+  </text>
+
+  <!-- Test 3: dx horizontal shift -->
+  <text class="baseText" x="50" y="160">
+    Start
+    <tspan dx="20" fill="green">ShiftedRight</tspan>
+  </text>
+
+  <!-- Test 4: dy new line -->
+  <text class="baseText" x="50" y="210">
+    Line 1
+    <tspan x="50" dy="35" fill="#ff00aa">
+      Line 2 (dy test)
+    </tspan>
+  </text>
+
+</svg>
