@@ -17,6 +17,8 @@ Protected Class SVGPicture
 		  Var foundProps As Boolean
 		  Var i As Integer
 		  Var node As XMLNode
+		  Var viewBox As String
+		  Var parts() As String
 		  
 		  mWidth = 0
 		  mHeight = 0
@@ -30,6 +32,32 @@ Protected Class SVGPicture
 		      if node.Name = "svg" then
 		        mWidth = Val(node.GetAttribute("width"))
 		        mHeight = Val(node.GetAttribute("height"))
+		        
+		        // Fallback to viewBox dimensions when width/height are omitted.
+		        if (mWidth <= 0) or (mHeight <= 0) then
+		          viewBox = node.GetAttribute("viewBox").Trim()
+		          if viewBox = "" then
+		            viewBox = node.GetAttribute("viewbox").Trim()
+		          end if
+		          
+		          if viewBox <> "" then
+		            viewBox = viewBox.ReplaceAll(",", " ")
+		            while viewBox.IndexOf("  ") >= 0
+		              viewBox = viewBox.ReplaceAll("  ", " ")
+		            wend
+		            
+		            parts = viewBox.Split(" ")
+		            if parts.LastIndex >= 3 then
+		              if mWidth <= 0 then
+		                mWidth = Val(parts(2))
+		              end if
+		              if mHeight <= 0 then
+		                mHeight = Val(parts(3))
+		              end if
+		            end if
+		          end if
+		        end if
+		        
 		        foundProps = true
 		      end if
 		      i = i + 1
