@@ -2655,7 +2655,26 @@ Protected Module SVG
 		  Var localStyle As JSONItem
 		  Var style As JSONItem
 		  Var matrix() As Double
+		  Var mulMatrix() As Double
 		  Var i As Integer
+		  Var x As Double
+		  Var y As Double
+		  Var width As Double
+		  Var height As Double
+		  Var viewBox As String
+		  Var viewBoxArr() As String
+		  Var minX As Double
+		  Var minY As Double
+		  Var viewBoxWidth As Double
+		  Var viewBoxHeight As Double
+		  Var preserveAspectRatio As String
+		  Var align As String
+		  Var meetOrSlice As String
+		  Var scale As Double
+		  Var scaleX As Double
+		  Var scaleY As Double
+		  Var xOffset As Double
+		  Var yOffset As Double
 		  
 		  style = new JSONItem("{}")
 		  style.ApplyValues parentStyle
@@ -2663,6 +2682,95 @@ Protected Module SVG
 		  style.ApplyValues localStyle
 		  matrix = buildTransformationMatrix(localStyle.Lookup("transform", ""))
 		  matrix = matrixMultiply(parentMatrix, matrix)
+		  
+		  x = style.LookupDouble("x")
+		  y = style.LookupDouble("y")
+		  width = style.LookupDouble("width")
+		  height = style.LookupDouble("height")
+		  
+		  if width <= 0 then
+		    width = g.Width
+		  end if
+		  if height <= 0 then
+		    height = g.Height
+		  end if
+		  
+		  mulMatrix = translationMatrix(x, y)
+		  matrix = matrixMultiply(matrix, mulMatrix)
+		  
+		  viewBox = node.GetAttribute("viewBox").Trim()
+		  if viewBox = "" then
+		    viewBox = node.GetAttribute("viewbox").Trim()
+		  end if
+		  
+		  if viewBox <> "" then
+		    viewBox = viewBox.ReplaceAll(",", " ")
+		    while viewBox.IndexOf("  ") >= 0
+		      viewBox = viewBox.ReplaceAll("  ", " ")
+		    wend
+		    
+		    viewBoxArr = viewBox.Split(" ")
+		    if viewBoxArr.LastIndex >= 3 then
+		      minX = Val(viewBoxArr(0))
+		      minY = Val(viewBoxArr(1))
+		      viewBoxWidth = Val(viewBoxArr(2))
+		      viewBoxHeight = Val(viewBoxArr(3))
+		      
+		      if (viewBoxWidth > 0) and (viewBoxHeight > 0) then
+		        preserveAspectRatio = node.GetAttribute("preserveAspectRatio").Trim().Lowercase()
+		        if preserveAspectRatio = "" then
+		          preserveAspectRatio = "xmidymid meet"
+		        end if
+		        
+		        if preserveAspectRatio = "none" then
+		          scaleX = width / viewBoxWidth
+		          scaleY = height / viewBoxHeight
+		          
+		          mulMatrix = scaleMatrix(scaleX, scaleY)
+		          matrix = matrixMultiply(matrix, mulMatrix)
+		        else
+		          align = preserveAspectRatio
+		          meetOrSlice = "meet"
+		          if align.IndexOf(" ") >= 0 then
+		            meetOrSlice = align.NthField(" ", 2).Trim()
+		            align = align.NthField(" ", 1).Trim()
+		          end if
+		          
+		          scaleX = width / viewBoxWidth
+		          scaleY = height / viewBoxHeight
+		          if meetOrSlice = "slice" then
+		            scale = Max(scaleX, scaleY)
+		          else
+		            scale = Min(scaleX, scaleY)
+		          end if
+		          
+		          xOffset = 0
+		          yOffset = 0
+		          
+		          if align.IndexOf("xmid") >= 0 then
+		            xOffset = (width - (viewBoxWidth * scale)) / 2.0
+		          elseif align.IndexOf("xmax") >= 0 then
+		            xOffset = width - (viewBoxWidth * scale)
+		          end if
+		          
+		          if align.IndexOf("ymid") >= 0 then
+		            yOffset = (height - (viewBoxHeight * scale)) / 2.0
+		          elseif align.IndexOf("ymax") >= 0 then
+		            yOffset = height - (viewBoxHeight * scale)
+		          end if
+		          
+		          mulMatrix = translationMatrix(xOffset, yOffset)
+		          matrix = matrixMultiply(matrix, mulMatrix)
+		          
+		          mulMatrix = scaleMatrix(scale, scale)
+		          matrix = matrixMultiply(matrix, mulMatrix)
+		        end if
+		        
+		        mulMatrix = translationMatrix(-minX, -minY)
+		        matrix = matrixMultiply(matrix, mulMatrix)
+		      end if
+		    end if
+		  end if
 		  
 		  i = 0
 		  while i < node.ChildCount
