@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="250" viewBox="0 0 760 250">
+  <defs>
+    <marker id="arcArrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6c7faa"/>
+    </marker>
+  </defs>
+  <rect x="18" y="18" width="724" height="214" rx="28" fill="#fbfff7" stroke="#7bb16a" stroke-width="5"/>
+  <line x1="65" y1="112" x2="695" y2="112" stroke="#4d4d4d" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 101.0 72 Q 150.0 18 199.0 72" fill="none" stroke="#6c7faa" stroke-width="5" stroke-linecap="round" marker-end="url(#arcArrow)" opacity="0.85"/>
+  <path d="M 215.0 72 Q 264.0 18 313.0 72" fill="none" stroke="#6c7faa" stroke-width="5" stroke-linecap="round" marker-end="url(#arcArrow)" opacity="0.85"/>
+  <path d="M 329.0 72 Q 378.0 18 427.0 72" fill="none" stroke="#6c7faa" stroke-width="5" stroke-linecap="round" marker-end="url(#arcArrow)" opacity="0.85"/>
+  <path d="M 443.0 72 Q 492.0 18 541.0 72" fill="none" stroke="#6c7faa" stroke-width="5" stroke-linecap="round" marker-end="url(#arcArrow)" opacity="0.85"/>
+  <path d="M 557.0 72 Q 606.0 18 655.0 72" fill="none" stroke="#6c7faa" stroke-width="5" stroke-linecap="round" marker-end="url(#arcArrow)" opacity="0.85"/>
+  <line x1="95" y1="82" x2="95" y2="142" stroke="#4d4d4d" stroke-width="4" stroke-linecap="round"/>
+  <text x="95" y="198" text-anchor="middle" font-family="ABC Junior Typing" font-size="54" font-weight="700" fill="#2f2f2f">0</text>
+  <line x1="209" y1="82" x2="209" y2="142" stroke="#4d4d4d" stroke-width="4" stroke-linecap="round"/>
+  <text x="209" y="198" text-anchor="middle" font-family="ABC Junior Typing" font-size="54" font-weight="700" fill="#2f2f2f">[[0]]</text>
+  <line x1="323" y1="82" x2="323" y2="142" stroke="#4d4d4d" stroke-width="4" stroke-linecap="round"/>
+  <text x="323" y="198" text-anchor="middle" font-family="ABC Junior Typing" font-size="54" font-weight="700" fill="#2f2f2f">2</text>
+  <line x1="437" y1="82" x2="437" y2="142" stroke="#4d4d4d" stroke-width="4" stroke-linecap="round"/>
+  <text x="437" y="198" text-anchor="middle" font-family="ABC Junior Typing" font-size="54" font-weight="700" fill="#2f2f2f">[[1]]</text>
+  <line x1="551" y1="82" x2="551" y2="142" stroke="#4d4d4d" stroke-width="4" stroke-linecap="round"/>
+  <text x="551" y="198" text-anchor="middle" font-family="ABC Junior Typing" font-size="54" font-weight="700" fill="#2f2f2f">4</text>
+  <line x1="665" y1="82" x2="665" y2="142" stroke="#4d4d4d" stroke-width="4" stroke-linecap="round"/>
+  <text x="665" y="198" text-anchor="middle" font-family="ABC Junior Typing" font-size="54" font-weight="700" fill="#2f2f2f">[[2]]</text>
+</svg>
