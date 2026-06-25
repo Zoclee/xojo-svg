@@ -1383,7 +1383,13 @@ Protected Module SVG
 
 	#tag Method, Flags = &h21
 		Private Sub render_line(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
+		  Var hasMarkerEndData As Boolean
 		  Var localStyle As JSONItem
+		  Var markerAngle As Double
+		  Var markerEndX As Double
+		  Var markerEndY As Double
+		  Var markerStartX As Double
+		  Var markerStartY As Double
 		  Var style As JSONItem
 		  Var matrix() As Double
 		  Var x1 As Double
@@ -1407,6 +1413,10 @@ Protected Module SVG
 		  // build path
 		  
 		  path = new GraphicsPath()
+		  markerStartX = x1
+		  markerStartY = y1
+		  markerEndX = x2
+		  markerEndY = y2
 		  
 		  transformPoint x1, y1, matrix
 		  path.MoveToPoint x1, y1
@@ -1415,6 +1425,15 @@ Protected Module SVG
 		  path.AddLineToPoint x2, y2 
 		  
 		  RenderPath g, path, style, matrix(0), false, false, true
+		  
+		  if style.LookupString("marker-end", "") <> "" then
+		    transformPoint markerStartX, markerStartY, matrix
+		    transformPoint markerEndX, markerEndY, matrix
+		    updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, markerStartX, markerStartY, markerEndX, markerEndY
+		    if hasMarkerEndData then
+		      renderMarkerEnd g, style, markerEndX, markerEndY, markerAngle, style.LookupDouble("stroke-width", 1) * matrix(0)
+		    end if
+		  end if
 		End Sub
 	#tag EndMethod
 
@@ -1481,6 +1500,14 @@ Protected Module SVG
 		  Var controlY1 As Double
 		  Var controlX2 As Double
 		  Var controlY2 As Double
+		  Var currentPathX As Double
+		  Var currentPathY As Double
+		  Var hasMarkerEndData As Boolean
+		  Var markerAngle As Double
+		  Var markerEndX As Double
+		  Var markerEndY As Double
+		  Var subPathStartX As Double
+		  Var subPathStartY As Double
 		  Var tmpStr As String
 		  Var startX As Double
 		  Var startY As Double
@@ -1537,6 +1564,10 @@ Protected Module SVG
 		  tmpY = penY
 		  transformPoint tmpX, tmpY, matrix
 		  shape.MoveToPoint tmpX, tmpY
+		  currentPathX = tmpX
+		  currentPathY = tmpY
+		  subPathStartX = tmpX
+		  subPathStartY = tmpY
 		  
 		  d = style.LookupString("d", "").Trim()
 		  d = d.ReplaceAll(",", " ")
@@ -1753,6 +1784,12 @@ Protected Module SVG
 		        
 		        penX = x2
 		        penY = y2
+		        tmpX = x2
+		        tmpY = y2
+		        transformPoint tmpX, tmpY, matrix
+		        updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, currentPathX, currentPathY, tmpX, tmpY
+		        currentPathX = tmpX
+		        currentPathY = tmpY
 		        
 		        continueImplicit = false
 		        if i < path.LastIndex then
@@ -1793,6 +1830,9 @@ Protected Module SVG
 		        transformPoint tmpX, tmpY, matrix
 		        
 		        shape.AddCurveToPoint controlX1, controlY1, controlX2, controlY2, tmpX, tmpY
+		        updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, controlX2, controlY2, tmpX, tmpY
+		        currentPathX = tmpX
+		        currentPathY = tmpY
 		        
 		        continueImplicit = false
 		        if i < path.LastIndex then
@@ -1833,6 +1873,9 @@ Protected Module SVG
 		        transformPoint tmpX, tmpY, matrix
 		        
 		        shape.AddCurveToPoint controlX1, controlY1, controlX2, controlY2, tmpX, tmpY
+		        updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, controlX2, controlY2, tmpX, tmpY
+		        currentPathX = tmpX
+		        currentPathY = tmpY
 		        
 		        continueImplicit = false
 		        if i < path.LastIndex then
@@ -1855,6 +1898,9 @@ Protected Module SVG
 		        transformPoint tmpX, tmpY, matrix
 		        
 		        shape.AddLineToPoint tmpX, tmpY
+		        updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, currentPathX, currentPathY, tmpX, tmpY
+		        currentPathX = tmpX
+		        currentPathY = tmpY
 		        
 		        continueImplicit = false
 		        if i < path.LastIndex then
@@ -1877,6 +1923,9 @@ Protected Module SVG
 		        transformPoint tmpX, tmpY, matrix
 		        
 		        shape.AddLineToPoint tmpX, tmpY
+		        updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, currentPathX, currentPathY, tmpX, tmpY
+		        currentPathX = tmpX
+		        currentPathY = tmpY
 		        
 		        continueImplicit = false
 		        if i < path.LastIndex then
@@ -1903,6 +1952,9 @@ Protected Module SVG
 		        transformPoint tmpX, tmpY, matrix
 		        
 		        shape.AddLineToPoint tmpX, tmpY
+		        updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, currentPathX, currentPathY, tmpX, tmpY
+		        currentPathX = tmpX
+		        currentPathY = tmpY
 		        
 		        continueImplicit = false
 		        if i < path.LastIndex then
@@ -1928,6 +1980,9 @@ Protected Module SVG
 		        transformPoint tmpX, tmpY, matrix
 		        
 		        shape.AddLineToPoint tmpX, tmpY
+		        updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, currentPathX, currentPathY, tmpX, tmpY
+		        currentPathX = tmpX
+		        currentPathY = tmpY
 		        
 		        continueImplicit = false
 		        if i < path.LastIndex then
@@ -1955,6 +2010,10 @@ Protected Module SVG
 		      
 		      transformPoint tmpX, tmpY, matrix
 		      shape.MoveToPoint tmpX, tmpY
+		      currentPathX = tmpX
+		      currentPathY = tmpY
+		      subPathStartX = tmpX
+		      subPathStartY = tmpY
 		      
 		      // apply  implicit lineto commands
 		      
@@ -1971,6 +2030,9 @@ Protected Module SVG
 		            transformPoint tmpX, tmpY, matrix
 		            
 		            shape.AddLineToPoint tmpX, tmpY
+		            updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, currentPathX, currentPathY, tmpX, tmpY
+		            currentPathX = tmpX
+		            currentPathY = tmpY
 		            
 		            continueImplicit = true
 		          end if
@@ -1997,6 +2059,10 @@ Protected Module SVG
 		      
 		      transformPoint tmpX, tmpY, matrix
 		      shape.MoveToPoint tmpX, tmpY
+		      currentPathX = tmpX
+		      currentPathY = tmpY
+		      subPathStartX = tmpX
+		      subPathStartY = tmpY
 		      
 		      // apply  implicit lineto commands
 		      
@@ -2015,6 +2081,9 @@ Protected Module SVG
 		            transformPoint tmpX, tmpY, matrix
 		            
 		            shape.AddLineToPoint tmpX, tmpY
+		            updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, currentPathX, currentPathY, tmpX, tmpY
+		            currentPathX = tmpX
+		            currentPathY = tmpY
 		            
 		            continueImplicit = true
 		          end if
@@ -2044,6 +2113,9 @@ Protected Module SVG
 		        transformPoint tmpX, tmpY, matrix
 		        
 		        shape.AddQuadraticCurveToPoint controlX1, controlY1, tmpX, tmpY
+		        updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, controlX1, controlY1, tmpX, tmpY
+		        currentPathX = tmpX
+		        currentPathY = tmpY
 		        
 		        continueImplicit = false
 		        if i < path.LastIndex then
@@ -2082,6 +2154,9 @@ Protected Module SVG
 		        
 		        // TODO: draw shape
 		        shape.AddQuadraticCurveToPoint prevControlX, prevControlY, tmpX, tmpY
+		        updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, prevControlX, prevControlY, tmpX, tmpY
+		        currentPathX = tmpX
+		        currentPathY = tmpY
 		        
 		        continueImplicit = false
 		        if i < path.LastIndex then
@@ -2128,6 +2203,9 @@ Protected Module SVG
 		        transformPoint tmpX, tmpY, matrix
 		        
 		        shape.AddCurveToPoint controlX1, controlY1, controlX2, controlY2, tmpX, tmpY
+		        updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, controlX2, controlY2, tmpX, tmpY
+		        currentPathX = tmpX
+		        currentPathY = tmpY
 		        
 		        continueImplicit = false
 		        if i < path.LastIndex then
@@ -2174,6 +2252,9 @@ Protected Module SVG
 		        transformPoint tmpX, tmpY, matrix
 		        
 		        shape.AddCurveToPoint controlX1, controlY1, controlX2, controlY2, tmpX, tmpY
+		        updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, controlX2, controlY2, tmpX, tmpY
+		        currentPathX = tmpX
+		        currentPathY = tmpY
 		        
 		        continueImplicit = false
 		        if i < path.LastIndex then
@@ -2211,6 +2292,9 @@ Protected Module SVG
 		        transformPoint tmpX, tmpY, matrix
 		        
 		        shape.AddQuadraticCurveToPoint controlX1, controlY1, tmpX, tmpY
+		        updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, controlX1, controlY1, tmpX, tmpY
+		        currentPathX = tmpX
+		        currentPathY = tmpY
 		        
 		        continueImplicit = false
 		        if i < path.LastIndex then
@@ -2247,6 +2331,9 @@ Protected Module SVG
 		        transformPoint tmpX, tmpY, matrix
 		        
 		        shape.AddQuadraticCurveToPoint controlX1, controlY1, tmpX, tmpY
+		        updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, controlX1, controlY1, tmpX, tmpY
+		        currentPathX = tmpX
+		        currentPathY = tmpY
 		        
 		        continueImplicit = false
 		        if i < path.LastIndex then
@@ -2270,6 +2357,9 @@ Protected Module SVG
 		        transformPoint tmpX, tmpY, matrix
 		        
 		        shape.AddLineToPoint tmpX, tmpY
+		        updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, currentPathX, currentPathY, tmpX, tmpY
+		        currentPathX = tmpX
+		        currentPathY = tmpY
 		        
 		        continueImplicit = false
 		        if i < path.LastIndex then
@@ -2294,6 +2384,9 @@ Protected Module SVG
 		        transformPoint tmpX, tmpY, matrix
 		        
 		        shape.AddLineToPoint tmpX, tmpY
+		        updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, currentPathX, currentPathY, tmpX, tmpY
+		        currentPathX = tmpX
+		        currentPathY = tmpY
 		        
 		        continueImplicit = false
 		        if i < path.LastIndex then
@@ -2310,6 +2403,9 @@ Protected Module SVG
 		    elseif path(i) = "z" then // close path
 		      
 		      prevClosed = true
+		      updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, currentPathX, currentPathY, subPathStartX, subPathStartY
+		      currentPathX = subPathStartX
+		      currentPathY = subPathStartY
 		      
 		      penX = startX
 		      penY = startY
@@ -2338,6 +2434,10 @@ Protected Module SVG
 		  wend
 		  
 		  RenderPath g, shape, style, matrix(0), prevClosed, true, true
+		  
+		  if hasMarkerEndData and (style.LookupString("marker-end", "") <> "") then
+		    renderMarkerEnd g, style, markerEndX, markerEndY, markerAngle, strokeWidth
+		  end if
 		  
 		End Sub
 	#tag EndMethod
@@ -2939,6 +3039,128 @@ Protected Module SVG
 		  return result
 		  
 		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function extractURLReference(value As String) As String
+		  Var result As String
+		  
+		  result = value.Trim()
+		  if (result.Left(4) = "url(") and (result.Right(1) = ")") then
+		    result = result.Middle(4, result.Length - 5).Trim()
+		  else
+		    result = ""
+		  end if
+		  
+		  return result
+		  
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub renderMarkerEnd(g As Graphics, style As JSONItem, markerEndX As Double, markerEndY As Double, markerAngle As Double, strokeWidth As Double)
+		  Var childIndex As Integer
+		  Var markerHeight As Double
+		  Var markerMatrix() As Double
+		  Var markerNode As XMLNode
+		  Var markerRef As String
+		  Var markerStyle As JSONItem
+		  Var markerUnits As String
+		  Var markerWidth As Double
+		  Var orient As String
+		  Var orientAngle As Double
+		  Var refX As Double
+		  Var refY As Double
+		  Var scaleX As Double
+		  Var scaleY As Double
+		  Var viewBox() As String
+		  Var viewBoxHeight As Double
+		  Var viewBoxWidth As Double
+		  
+		  markerRef = extractURLReference(style.LookupString("marker-end", ""))
+		  if markerRef = "" then
+		    return
+		  end if
+		  
+		  if not mNodes.HasKey(markerRef) then
+		    return
+		  end if
+		  
+		  markerNode = mNodes.Value(markerRef)
+		  if (markerNode = nil) or (markerNode.Name <> "marker") then
+		    return
+		  end if
+		  
+		  refX = Val(markerNode.GetAttribute("refX"))
+		  refY = Val(markerNode.GetAttribute("refY"))
+		  markerWidth = Val(markerNode.GetAttribute("markerWidth"))
+		  markerHeight = Val(markerNode.GetAttribute("markerHeight"))
+		  if markerWidth = 0 then markerWidth = 3
+		  if markerHeight = 0 then markerHeight = 3
+		  
+		  viewBoxWidth = 0
+		  viewBoxHeight = 0
+		  if markerNode.GetAttribute("viewBox").Trim() <> "" then
+		    viewBox = markerNode.GetAttribute("viewBox").ReplaceAll(",", " ").Split(" ")
+		    if viewBox.LastIndex >= 3 then
+		      viewBoxWidth = Val(viewBox(2))
+		      viewBoxHeight = Val(viewBox(3))
+		    end if
+		  end if
+		  if viewBoxWidth = 0 then viewBoxWidth = markerWidth
+		  if viewBoxHeight = 0 then viewBoxHeight = markerHeight
+		  
+		  scaleX = markerWidth / viewBoxWidth
+		  scaleY = markerHeight / viewBoxHeight
+		  
+		  markerUnits = markerNode.GetAttribute("markerUnits").Trim().Lowercase()
+		  if markerUnits = "" then markerUnits = "strokewidth"
+		  if markerUnits = "strokewidth" then
+		    scaleX = scaleX * strokeWidth
+		    scaleY = scaleY * strokeWidth
+		  end if
+		  
+		  orient = markerNode.GetAttribute("orient").Trim().Lowercase()
+		  orientAngle = markerAngle
+		  if (orient <> "") and (orient <> "auto") and (orient <> "auto-start-reverse") then
+		    orientAngle = Val(orient)
+		  end if
+		  
+		  markerMatrix = translationMatrix(markerEndX, markerEndY)
+		  markerMatrix = matrixMultiply(markerMatrix, rotationMatrix(orientAngle))
+		  markerMatrix = matrixMultiply(markerMatrix, scaleMatrix(scaleX, scaleY))
+		  markerMatrix = matrixMultiply(markerMatrix, translationMatrix(-refX, -refY))
+		  
+		  markerStyle = New JSONItem("{}")
+		  markerStyle.ApplyValues buildStyleItem(markerNode)
+		  
+		  childIndex = 0
+		  while childIndex < markerNode.ChildCount
+		    if (not markerNode.Child(childIndex) IsA XMLTextNode) and _
+		      (not markerNode.Child(childIndex) IsA XMLComment) and _
+		      (not markerNode.Child(childIndex) IsA XMLProcessingInstruction) then
+		      renderNode(markerNode.Child(childIndex), g, markerMatrix, markerStyle)
+		    end if
+		    childIndex = childIndex + 1
+		  wend
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub updateMarkerEndData(ByRef hasMarkerEndData As Boolean, ByRef markerEndX As Double, ByRef markerEndY As Double, ByRef markerAngle As Double, referenceX As Double, referenceY As Double, endX As Double, endY As Double)
+		  Var dx As Double
+		  Var dy As Double
+		  
+		  dx = endX - referenceX
+		  dy = endY - referenceY
+		  
+		  if (dx <> 0) or (dy <> 0) then
+		    hasMarkerEndData = true
+		    markerEndX = endX
+		    markerEndY = endY
+		    markerAngle = Atan2(dy, dx) * (180 / Pi)
+		  end if
+		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
