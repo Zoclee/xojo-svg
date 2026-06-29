@@ -563,6 +563,18 @@ Protected Module SVG
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
+		Private Function isTranslationScaleMatrix(matrix() As Double) As Boolean
+		  Var result As Boolean
+
+		  result = (matrix(1) = 0) and (matrix(3) = 0) and _
+		  (matrix(6) = 0) and (matrix(7) = 0) and (matrix(8) = 1)
+
+		  return result
+
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
 		Private Sub loadCSS(styleData As String)
 		  Var className As String
 		  Var i As Integer
@@ -1347,6 +1359,14 @@ Protected Module SVG
 		  Var y As Double
 		  Var width As Double
 		  Var height As Double
+		  Var preserveAspectRatio As String
+		  Var align As String
+		  Var meetOrSlice As String
+		  Var scale As Double
+		  Var scaleX As Double
+		  Var scaleY As Double
+		  Var xOffset As Double
+		  Var yOffset As Double
 		  
 		  style = new JSONItem("{}")
 		  style.ApplyValues parentStyle
@@ -1364,14 +1384,73 @@ Protected Module SVG
 		  image = loadImage(imageData)
 		  
 		  if image <> nil then
+		    if width <= 0 then
+		      width = image.Width
+		    end if
+		    if height <= 0 then
+		      height = image.Height
+		    end if
 		    
 		    mulMatrix = translationMatrix(x, y)
 		    matrix = matrixMultiply(matrix, mulMatrix)
-		    
-		    // to speed up rendering, we only use DrawTransformedPicture when needed
-		    
+
+		    preserveAspectRatio = node.GetAttribute("preserveAspectRatio").Trim().Lowercase()
+		    if preserveAspectRatio = "" then
+		      preserveAspectRatio = "xmidymid meet"
+		    end if
+
+		    if preserveAspectRatio = "none" then
+		      scaleX = width / image.Width
+		      scaleY = height / image.Height
+
+		      mulMatrix = scaleMatrix(scaleX, scaleY)
+		      matrix = matrixMultiply(matrix, mulMatrix)
+		    else
+		      align = preserveAspectRatio
+		      meetOrSlice = "meet"
+		      if align.IndexOf(" ") >= 0 then
+		        meetOrSlice = align.NthField(" ", 2).Trim()
+		        align = align.NthField(" ", 1).Trim()
+		      end if
+
+		      scaleX = width / image.Width
+		      scaleY = height / image.Height
+		      if meetOrSlice = "slice" then
+		        scale = Max(scaleX, scaleY)
+		      else
+		        scale = Min(scaleX, scaleY)
+		      end if
+
+		      xOffset = 0
+		      yOffset = 0
+
+		      if align.IndexOf("xmid") >= 0 then
+		        xOffset = (width - (image.Width * scale)) / 2.0
+		      elseif align.IndexOf("xmax") >= 0 then
+		        xOffset = width - (image.Width * scale)
+		      end if
+
+		      if align.IndexOf("ymid") >= 0 then
+		        yOffset = (height - (image.Height * scale)) / 2.0
+		      elseif align.IndexOf("ymax") >= 0 then
+		        yOffset = height - (image.Height * scale)
+		      end if
+
+		      mulMatrix = translationMatrix(xOffset, yOffset)
+		      matrix = matrixMultiply(matrix, mulMatrix)
+
+		      mulMatrix = scaleMatrix(scale, scale)
+		      matrix = matrixMultiply(matrix, mulMatrix)
+		    end if
+
+		    // Use native scaling for axis-aligned images; the transformed sampler is only needed for skewed or rotated images.
+
 		    if isTranslationMatrix(matrix) then
 		      g.DrawPicture image, matrix(2), matrix(5)
+		    elseif isTranslationScaleMatrix(matrix) and (matrix(0) > 0) and (matrix(4) > 0) then
+		      g.DrawPicture image, matrix(2), matrix(5), _
+		      image.Width * matrix(0), image.Height * matrix(4), _
+		      0, 0, image.Width, image.Height
 		    else
 		      g.DrawTransformedPicture image, matrix
 		    end if
