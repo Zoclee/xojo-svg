@@ -672,6 +672,22 @@ Protected Module SVG
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
+		Private Function normalizeFontFamily(fontFamily As String) As String
+		  Var result As String
+		  
+		  result = fontFamily.Trim()
+		  if result.Length >= 2 then
+		    if ((result.Left(1) = "'") and (result.Right(1) = "'")) or ((result.Left(1) = Chr(34)) and (result.Right(1) = Chr(34))) then
+		      result = result.Middle(1, result.Length - 2)
+		    end if
+		  end if
+		  
+		  return result
+		  
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
 		Private Function mapQuadToQuad(Quad() as Xojo.Point) As Double()
 		  Var sq(8) as Double
 		  Var px, py as Double
@@ -3031,7 +3047,7 @@ Protected Module SVG
 		    
 		    if textStr <> "" then
 		      
-		      g.FontName = elementStyle.LookupString("font-family", "Arial")
+		      g.FontName = normalizeFontFamily(elementStyle.LookupString("font-family", "Arial"))
 		      g.FontUnit = FontUnits.Pixel
 		      g.FontSize = Val(elementStyle.LookupString("font-size", "16"))
 		      if g.FontSize <= 0 then
