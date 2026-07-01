@@ -75,6 +75,7 @@ Protected Module SVG
 		  Var itemArr() As String
 		  Var className As String
 		  Var classProperties As JSONItem
+		  Var inlineStyle As String
 		  
 		  if mClasses.HasKey(node.Name.Lowercase) then
 		    classProperties = mClasses.Value(node.Name.Lowercase)
@@ -95,17 +96,8 @@ Protected Module SVG
 		      
 		    elseif xAttr.Name = "style" then
 		      
-		      // process style attribute
-		      
-		      styleArr = node.GetAttribute(xAttr.Name).Split(";")
-		      j = 0
-		      while j <= styleArr.LastIndex
-		        itemArr = styleArr(j).Split(":")
-		        if itemArr.LastIndex = 1 then
-		          result.Value(itemArr(0).Trim.Lowercase) = itemArr(1)
-		        end if
-		        j = j + 1
-		      wend
+		      // Inline style has higher precedence than presentation attributes.
+		      inlineStyle = node.GetAttribute(xAttr.Name)
 		      
 		    elseif xAttr.Name.IndexOf(":") < 0 then
 		      
@@ -115,6 +107,18 @@ Protected Module SVG
 		    
 		    i = i + 1
 		  wend
+		  
+		  if inlineStyle <> "" then
+		    styleArr = inlineStyle.Split(";")
+		    j = 0
+		    while j <= styleArr.LastIndex
+		      itemArr = styleArr(j).Split(":")
+		      if itemArr.LastIndex = 1 then
+		        result.Value(itemArr(0).Trim.Lowercase) = itemArr(1)
+		      end if
+		      j = j + 1
+		    wend
+		  end if
 		  
 		  return result
 		  
@@ -674,8 +678,14 @@ Protected Module SVG
 	#tag Method, Flags = &h21
 		Private Function normalizeFontFamily(fontFamily As String) As String
 		  Var result As String
+		  Var familyArr() As String
 		  
 		  result = fontFamily.Trim()
+		  familyArr = result.Split(",")
+		  if familyArr.LastIndex >= 0 then
+		    result = familyArr(0).Trim()
+		  end if
+		  
 		  if result.Length >= 2 then
 		    if ((result.Left(1) = "'") and (result.Right(1) = "'")) or ((result.Left(1) = Chr(34)) and (result.Right(1) = Chr(34))) then
 		      result = result.Middle(1, result.Length - 2)
