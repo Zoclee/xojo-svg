@@ -2,28 +2,34 @@
 Protected Module SVG
 	#tag Method, Flags = &h21
 		Private Function angleBetweenVectors(ux As Double, uy As Double, vx As Double, vy As Double) As Double
-		  // Angle of vector V from the positive X-axis
-		  Var angleV As Double
-		  angleV = Atan2(vy, vx) * (180 / Acos(-1)) // Convert Radians to Degrees
-		  
-		  // Angle of vector U from the positive X-axis
-		  Var angleU As Double
-		  angleU = Atan2(uy, ux) * (180 / Acos(-1)) // Convert Radians to Degrees
-		  
-		  // Calculate the difference
-		  Var angleDelta As Double = angleV - angleU
-		  
-		  // Normalize the angle to be within [0, 360) degrees
-		  // Use Modulo operator for normalization
-		  angleDelta = angleDelta Mod 360
-		  
-		  // If the result is negative, normalize it back to positive [0, 360)
-		  if angleDelta < 0 then
-		    angleDelta = angleDelta + 360
+		  Var dotProduct As Double
+		  Var crossProduct As Double
+		  Var vectorLength As Double
+		  Var angleCos As Double
+		  Var angle As Double
+
+		  dotProduct = (ux * vx) + (uy * vy)
+		  crossProduct = (ux * vy) - (uy * vx)
+		  vectorLength = Sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy))
+
+		  if vectorLength = 0 then
+		    Return 0
 		  end if
-		  
-		  Return angleDelta
-		  
+
+		  angleCos = dotProduct / vectorLength
+		  if angleCos < -1 then
+		    angleCos = -1
+		  elseif angleCos > 1 then
+		    angleCos = 1
+		  end if
+
+		  angle = Acos(angleCos) * RadToDeg
+		  if crossProduct < 0 then
+		    angle = -angle
+		  end if
+
+		  Return angle
+
 		End Function
 	#tag EndMethod
 
@@ -1690,16 +1696,13 @@ Protected Module SVG
 		  Var cyComp As Double
 		  Var cx As Double
 		  Var cy As Double
-		  Var theta1 As Integer
-		  Var thetaDelta As Integer
+		  Var theta1 As Double
+		  Var thetaDelta As Double
 		  Var tmpDbl As Double
 		  Var currentAngle As Double
 		  Var angleStep As Double
 		  Var pathMB As MemoryBlock
-		  Var adjustValue As Integer
 		  Var relativeCommand As Boolean
-		  Var tmpMatrix() As Double
-		  Var tmpMatrix2() As Double
 		  Var radiScale As Double
 		  Var shape As GraphicsPath
 		  Var ux As Double
@@ -1721,6 +1724,9 @@ Protected Module SVG
 		  Var tmpStr As String
 		  Var startX As Double
 		  Var startY As Double
+		  Var arcSegmentCount As Integer
+		  Var arcSegmentIndex As Integer
+		  Var arcAngle As Double
 		  
 		  shape = new GraphicsPath()
 		  
@@ -1946,7 +1952,6 @@ Protected Module SVG
 		        vx = (-x1Comp - cxComp) / rx
 		        vy = (-y1Comp - cyComp) / ry
 		        thetaDelta = angleBetweenVectors(ux, uy, vx, vy)
-		        thetaDelta = thetaDelta mod 360
 		        
 		        if (flagS = 0) and (thetaDelta > 0) then
 		          thetaDelta = thetaDelta - 360
@@ -1958,37 +1963,23 @@ Protected Module SVG
 		        
 		        if thetaDelta <> 0 then
 		          
-		          adjustValue = thetaDelta / Abs(thetaDelta)
-		          
-		          angleStep = (thetaDelta / 360) 
-		          
-		          currentAngle = theta1 + angleStep
-		          
-		          tmpMatrix = translationMatrix(0, 0) 
-		          
-		          tmpMatrix2 = translationMatrix(cx, cy)
-		          tmpMatrix = matrixMultiply(tmpMatrix, tmpMatrix2)
-		          tmpMatrix2 = rotationMatrix(theta * RadToDeg)
-		          tmpMatrix = matrixMultiply(tmpMatrix, tmpMatrix2)
-		          tmpMatrix2 = translationMatrix(-cx, -cy)
-		          tmpMatrix = matrixMultiply(tmpMatrix, tmpMatrix2)
-		          
-		          tmpMatrix = matrixMultiply(tmpMatrix, matrix)
+		          arcSegmentCount = Max(1, Ceiling(Abs(thetaDelta)))
+		          angleStep = thetaDelta / arcSegmentCount
 		          
 		          // build arc path
 		          
-		          while currentAngle * adjustValue <= (theta1 + thetaDelta) * adjustValue
+		          for arcSegmentIndex = 1 to arcSegmentCount
+		            currentAngle = theta1 + (angleStep * arcSegmentIndex)
+		            arcAngle = currentAngle * DegToRad
 		            
-		            tmpX = cx + rx  * cos(currentAngle * DegToRad) 
-		            tmpY = cy + ry * sin(currentAngle * DegToRad) 
+		            tmpX = cx + (rx * cos(arcAngle) * cos(theta)) - (ry * sin(arcAngle) * sin(theta))
+		            tmpY = cy + (rx * cos(arcAngle) * sin(theta)) + (ry * sin(arcAngle) * cos(theta))
 		            
-		            transformPoint tmpX, tmpY, tmpMatrix
+		            transformPoint tmpX, tmpY, matrix
 		            
 		            shape.AddLineToPoint tmpX, tmpY 
 		            
-		            currentAngle = currentAngle + angleStep
-		            
-		          wend 
+		          next
 		          
 		        end if
 		        
