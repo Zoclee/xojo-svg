@@ -126,6 +126,20 @@ Protected Module SVG
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
+		Private Function nodeAttributeDouble(node As XmlNode, name As String, defaultValue As Double = 0) As Double
+		  Var tmpStr As String
+
+		  tmpStr = node.GetAttribute(name).Trim()
+		  if tmpStr <> "" then
+		    return Val(tmpStr)
+		  end if
+
+		  return defaultValue
+
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
 		Private Function buildTransformationMatrix(transform As String) As Double()
 		  Var result() As Double = Array( _
 		  1.0, 0.0, 0.0, _
@@ -401,8 +415,8 @@ Protected Module SVG
 		  Var srcWidth as Integer
 		  Var srcHeight as Integer 
 		  Var destinationQuadrilateral() as Xojo.Point
-		  Var tmpX As Integer
-		  Var tmpY As Integer
+		  Var tmpX As Double
+		  Var tmpY As Double
 		  Var startX As Integer
 		  Var startY As Integer
 		  Var stopX As Integer
@@ -416,12 +430,19 @@ Protected Module SVG
 		  Var  factor, srcX, srcY as Double
 		  Var tgtPic as Picture
 		  Var srcRGB as RGBSurface
+		  Var srcMask As Picture
+		  Var maskRGB As RGBSurface
 		  Var tgtRGB as RGBSurface
+		  Var tgtHeight As Integer
+		  Var tgtWidth As Integer
+		  Var tgtX As Integer
+		  Var tgtY As Integer
 		  Var srcWidthM1 As Integer
 		  Var srcHeightM1 As Integer
 		  Var dx1, dy1, dx2, dy2 as Double 'coordinates of source points
 		  Var sx1, sy1, sx2, sy2 as Integer
 		  Var p1,p2,p3, p4 as Color ' temporary pixels
+		  Var m1,m2,m3,m4 as Color ' temporary mask pixels
 		  Var r, gp , b, a as Integer
 		  
 		  srcWidth = image.Width
@@ -434,18 +455,18 @@ Protected Module SVG
 		  transformPoint(tmpX, tmpY, matrix)
 		  destinationQuadrilateral.Add new Xojo.Point(tmpX, tmpY)
 		  
-		  tmpX = srcWidth -1
+		  tmpX = srcWidth
 		  tmpY = 0
 		  transformPoint(tmpX, tmpY, matrix)
 		  destinationQuadrilateral.Add new Xojo.Point(tmpX, tmpY)
 		  
-		  tmpX = srcWidth -1
-		  tmpY = srcHeight - 1
+		  tmpX = srcWidth
+		  tmpY = srcHeight
 		  transformPoint(tmpX, tmpY, matrix)
 		  destinationQuadrilateral.Add new Xojo.Point(tmpX, tmpY)
 		  
 		  tmpX = 0
-		  tmpY = srcHeight - 1
+		  tmpY = srcHeight
 		  transformPoint(tmpX, tmpY, matrix)
 		  destinationQuadrilateral.Add new Xojo.Point(tmpX, tmpY)
 		  
@@ -458,17 +479,51 @@ Protected Module SVG
 		  stopX = maxXY.X 
 		  stopY = maxXY.Y 
 		  
+		  if startX < 0 then
+		    startX = 0
+		  end if
+		  if startY < 0 then
+		    startY = 0
+		  end if
+		  if stopX >= g.Width then
+		    stopX = g.Width - 1
+		  end if
+		  if stopY >= g.Height then
+		    stopY = g.Height - 1
+		  end if
+
+		  if (startX > stopX) or (startY > stopY) then
+		    return
+		  end if
+
 		  'calculate tranformation matrix
 		  
 		  srcRect(0) = new Xojo.Point(0,0)
-		  srcRect(1) = new Xojo.Point(srcWidth -1 ,0)
-		  srcRect(2) = new Xojo.Point(srcWidth - 1, srcHeight - 1)
-		  srcRect(3) = new Xojo.Point(0, srcHeight - 1)
+		  srcRect(1) = new Xojo.Point(srcWidth, 0)
+		  srcRect(2) = new Xojo.Point(srcWidth, srcHeight)
+		  srcRect(3) = new Xojo.Point(0, srcHeight)
 		  transMatrix = MapQuadToQuad(destinationQuadrilateral, srcRect)
 		  
-		  tgtPic = new Picture(g.Width, g.Height)
+		  tgtWidth = stopX - startX + 1
+		  tgtHeight = stopY - startY + 1
+		  tgtPic = new Picture(tgtWidth, tgtHeight)
 		  srcRGB = image.RGBSurface
+		  if not image.HasAlphaChannel then
+		    srcMask = image.CopyMask
+		    if srcMask <> nil then
+		      maskRGB = srcMask.RGBSurface
+		    end if
+		  end if
 		  tgtRGB = tgtPic.RGBSurface
+
+		  tgtPic.Graphics.DrawingColor = Color.RGB(0, 0, 0, 255)
+		  tgtPic.Graphics.FillRectangle(0, 0, tgtWidth, tgtHeight)
+
+		  for y = 0 to tgtHeight - 1
+		    for x = 0 to tgtWidth - 1
+		      tgtRGB.Pixel(x, y) = Color.RGB(0, 0, 0, 255)
+		    next
+		  next
 		  
 		  srcWidthM1 = srcWidth - 1
 		  srcHeightM1 = srcHeight - 1
@@ -508,14 +563,26 @@ Protected Module SVG
 		        r = dy2 * ( dx2 * ( p1.red ) + dx1 * ( p2.red ) ) + dy1 * ( dx2 * ( p3.red ) + dx1 * ( p4.red ) )
 		        gp = dy2 * ( dx2 * ( p1.green ) + dx1 * ( p2.green ) ) + dy1 * ( dx2 * ( p3.green ) + dx1 * ( p4.green ) )
 		        b = dy2 * ( dx2 * ( p1.blue ) + dx1 * ( p2.blue ) ) + dy1 * ( dx2 * ( p3.blue ) + dx1 * ( p4.blue ) )
-		        a = dy2 * ( dx2 * ( p1.Alpha ) + dx1 * ( p2.Alpha ) ) + dy1 * ( dx2 * ( p3.Alpha ) + dx1 * ( p4.Alpha ) )
+		        if maskRGB <> nil then
+		          m1 = maskRGB.Pixel(sx1, sy1)
+		          m2 = maskRGB.Pixel(sx2, sy1)
+		          m3 = maskRGB.Pixel(sx1, sy2)
+		          m4 = maskRGB.Pixel(sx2, sy2)
+		          a = dy2 * ( dx2 * ( m1.Red ) + dx1 * ( m2.Red ) ) + dy1 * ( dx2 * ( m3.Red ) + dx1 * ( m4.Red ) )
+		        else
+		          a = dy2 * ( dx2 * ( p1.Alpha ) + dx1 * ( p2.Alpha ) ) + dy1 * ( dx2 * ( p3.Alpha ) + dx1 * ( p4.Alpha ) )
+		        end if
 		        
-		        tgtRGB.Pixel(x,y) = Color.RGB(r, gp, b, a)
+		        if a < 255 then
+		          tgtX = x - startX
+		          tgtY = y - startY
+		          tgtRGB.Pixel(tgtX, tgtY) = Color.RGB(r, gp, b, a)
+		        end if
 		      end if
 		    next
 		  next
 		  
-		  g.DrawPicture tgtPic, 0, 0
+		  g.DrawPicture tgtPic, startX, startY
 		  
 		  
 		End Sub
@@ -643,7 +710,6 @@ Protected Module SVG
 	#tag Method, Flags = &h21
 		Private Function loadImage(data As String) As Picture
 		  Var image As Picture
-		  Var alphaImage As Picture
 		  Var imageData As MemoryBlock
 		  Var commaPos As Integer
 		  
@@ -651,11 +717,9 @@ Protected Module SVG
 		  if commaPos >= 0 then
 		    imageData = DecodeBase64(data.Right(data.Length - commaPos))
 		    image = Picture.FromData(imageData)
-		    alphaImage = new Picture(image.Width, image.Height)
-		    alphaImage.Graphics.DrawPicture image, 0, 0
 		  end if
 		  
-		  return alphaImage
+		  return image
 		  
 		End Function
 	#tag EndMethod
@@ -1379,6 +1443,8 @@ Protected Module SVG
 		  Var style As JSONItem
 		  Var matrix() As Double
 		  Var mulMatrix() As Double
+		  Var destHeight As Double
+		  Var destWidth As Double
 		  Var imageData As String
 		  Var image As Picture
 		  Var x As Double
@@ -1401,10 +1467,10 @@ Protected Module SVG
 		  matrix = buildTransformationMatrix(localStyle.Lookup("transform", ""))
 		  matrix = matrixMultiply(parentMatrix, matrix)
 		  
-		  x = style.LookupDouble("x")
-		  y = style.LookupDouble("y")
-		  width = style.LookupDouble("width")
-		  height = style.LookupDouble("height")
+		  x = nodeAttributeDouble(node, "x", localStyle.LookupDouble("x"))
+		  y = nodeAttributeDouble(node, "y", localStyle.LookupDouble("y"))
+		  width = nodeAttributeDouble(node, "width", localStyle.LookupDouble("width"))
+		  height = nodeAttributeDouble(node, "height", localStyle.LookupDouble("height"))
 		  
 		  imageData = node.GetAttribute("xlink:href")
 		  image = loadImage(imageData)
@@ -1474,9 +1540,19 @@ Protected Module SVG
 		    if isTranslationMatrix(matrix) then
 		      g.DrawPicture image, matrix(2), matrix(5)
 		    elseif isTranslationScaleMatrix(matrix) and (matrix(0) > 0) and (matrix(4) > 0) then
-		      g.DrawPicture image, matrix(2), matrix(5), _
-		      image.Width * matrix(0), image.Height * matrix(4), _
-		      0, 0, image.Width, image.Height
+		      destWidth = image.Width * matrix(0)
+		      destHeight = image.Height * matrix(4)
+
+		      // Native scaled drawing can misplace partially clipped images.
+		      // Fall back to transformed sampling when any edge extends outside the target canvas.
+		      if (matrix(2) >= 0) and (matrix(5) >= 0) and _
+		        ((matrix(2) + destWidth) <= g.Width) and ((matrix(5) + destHeight) <= g.Height) then
+		        g.DrawPicture image, matrix(2), matrix(5), _
+		        destWidth, destHeight, _
+		        0, 0, image.Width, image.Height
+		      else
+		        g.DrawTransformedPicture image, matrix
+		      end if
 		    else
 		      g.DrawTransformedPicture image, matrix
 		    end if
