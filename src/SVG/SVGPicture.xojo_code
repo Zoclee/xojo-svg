@@ -30,8 +30,8 @@ Protected Class SVGPicture
 		    while (i < mSVGDocument.ChildCount) and not foundProps
 		      node = mSVGDocument.Child(i)
 		      if node.Name = "svg" then
-		        mWidth = Val(node.GetAttribute("width"))
-		        mHeight = Val(node.GetAttribute("height"))
+		        mWidth = Ceiling(LengthToPixels(node.GetAttribute("width")))
+		        mHeight = Ceiling(LengthToPixels(node.GetAttribute("height")))
 		        
 		        // Fallback to viewBox dimensions when width/height are omitted.
 		        if (mWidth <= 0) or (mHeight <= 0) then
@@ -68,6 +68,36 @@ Protected Class SVGPicture
 		End Sub
 	#tag EndMethod
 
+	#tag Method, Flags = &h21
+		Private Function LengthToPixels(value As String, defaultValue As Double = 0) As Double
+		  Var s As String
+		  
+		  s = value.Trim().Lowercase()
+		  if s = "" then
+		    return defaultValue
+		  end if
+		  
+		  if s.Right(1) = "%" then
+		    return Val(s)
+		  elseif s.Right(2) = "cm" then
+		    return Val(s) * 96.0 / 2.54
+		  elseif s.Right(2) = "mm" then
+		    return Val(s) * 96.0 / 25.4
+		  elseif s.Right(2) = "in" then
+		    return Val(s) * 96.0
+		  elseif s.Right(2) = "pt" then
+		    return Val(s) * 96.0 / 72.0
+		  elseif s.Right(2) = "pc" then
+		    return Val(s) * 16.0
+		  elseif s.Right(2) = "px" then
+		    return Val(s)
+		  end if
+		  
+		  return Val(s)
+		  
+		End Function
+	#tag EndMethod
+
 	#tag Method, Flags = &h0
 		Shared Function Open(file As FolderItem) As SVG.SVGPicture
 		  Var img As SVG.SVGPicture
@@ -86,10 +116,15 @@ Protected Class SVGPicture
 
 	#tag Method, Flags = &h0
 		Function ToPicture() As Picture
+		  Var pictureHeight As Integer
+		  Var pictureWidth As Integer
+		  
 		  if mPicture = nil then
 		    if mWidth > 0 and mHeight > 0 then
-		      mPicture = new Picture(mWidth, mHeight)
-		      mPicture.Graphics.DrawSVG(mSVGDocument, 0, 0, mWidth, mHeight)
+		      pictureWidth = Ceiling(mWidth)
+		      pictureHeight = Ceiling(mHeight)
+		      mPicture = new Picture(pictureWidth, pictureHeight)
+		      mPicture.Graphics.DrawSVG(mSVGDocument, 0, 0, pictureWidth, pictureHeight)
 		    end if
 		  end if
 		  

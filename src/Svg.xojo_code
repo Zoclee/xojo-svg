@@ -131,11 +131,44 @@ Protected Module SVG
 
 		  tmpStr = node.GetAttribute(name).Trim()
 		  if tmpStr <> "" then
-		    return Val(tmpStr)
+		    return svgLengthToPixels(tmpStr, defaultValue)
 		  end if
 
 		  return defaultValue
 
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function svgLengthToPixels(value As String, defaultValue As Double = 0, relativeTo As Double = 0) As Double
+		  Var s As String
+		  
+		  s = value.Trim().Lowercase()
+		  if s = "" then
+		    return defaultValue
+		  end if
+		  
+		  if s.Right(1) = "%" then
+		    if relativeTo <> 0 then
+		      return relativeTo * Val(s.Left(s.Length - 1)) / 100.0
+		    end if
+		    return Val(s)
+		  elseif s.Right(2) = "cm" then
+		    return Val(s) * 96.0 / 2.54
+		  elseif s.Right(2) = "mm" then
+		    return Val(s) * 96.0 / 25.4
+		  elseif s.Right(2) = "in" then
+		    return Val(s) * 96.0
+		  elseif s.Right(2) = "pt" then
+		    return Val(s) * 96.0 / 72.0
+		  elseif s.Right(2) = "pc" then
+		    return Val(s) * 16.0
+		  elseif s.Right(2) = "px" then
+		    return Val(s)
+		  end if
+		  
+		  return Val(s)
+		  
 		End Function
 	#tag EndMethod
 
@@ -1176,7 +1209,7 @@ Protected Module SVG
 		    
 		    g.DrawingColor = determineColor(stroke)
 		    g.PenSize = strokeWidth
-		    g.DrawPath path, closed
+		    g.DrawPath path, false
 		  end if
 		  
 		  g.RestoreState()
@@ -1190,6 +1223,8 @@ Protected Module SVG
 		  Var matrix() As Double
 		  Var w As Double
 		  Var h As Double
+		  Var imageWidth As Integer
+		  Var imageHeight As Integer
 		  Var wStr As String
 		  Var hStr As String
 		  Var svgImage As Picture
@@ -1219,20 +1254,12 @@ Protected Module SVG
 		      
 		      wStr = xdoc.Child(i).GetAttribute("width").Trim()
 		      if wStr <> "" then
-		        if IsNumeric(wStr) then
-		          w = Val(wStr)
-		        elseif wStr.Right(1) = "%" then
-		          w = g.Width * (Val(wStr.Left(wStr.Length - 1)) / 100)
-		        end if
+		        w = svgLengthToPixels(wStr, 0, g.Width)
 		      end if
 		      
 		      hStr = xdoc.Child(i).GetAttribute("height").Trim()
 		      if hStr <> "" then
-		        if IsNumeric(hStr) then
-		          h = Val(hStr)
-		        elseif hStr.Right(1) = "%" then
-		          h = g.Height * (Val(hStr.Left(hStr.Length - 1)) / 100)
-		        end if
+		        h = svgLengthToPixels(hStr, 0, g.Height)
 		      end if
 		      
 		      if w = 0 then
@@ -1280,7 +1307,9 @@ Protected Module SVG
 		      //finalImage = svgImage.ScalePicture(w, h)
 		      //g.DrawPicture finalImage, x, y, w1, h1, sx, sy, w2, h2
 		      
-		      svgImage = new Picture(w, h)
+		      imageWidth = Ceiling(w)
+		      imageHeight = Ceiling(h)
+		      svgImage = new Picture(imageWidth, imageHeight)
 		      renderNode(xdoc.Child(i), svgImage.Graphics, matrix, new JSONItem("{}"))
 		      
 		      g.DrawPicture svgImage, x, y, w1, h1, sx, sy, w2, h2
@@ -2462,8 +2491,8 @@ Protected Module SVG
 		          controlX1 = tmpX
 		          controlY1 = tmpY
 		        end if
-		        prevControlX = tmpX
-		        prevControlY = tmpY
+		        prevControlX = controlX1
+		        prevControlY = controlY1
 		        i = i + 1
 		        tmpX = Val(path(i))
 		        i = i + 1
@@ -2501,8 +2530,8 @@ Protected Module SVG
 		          controlX1 = tmpX
 		          controlY1 = tmpY
 		        end if
-		        prevControlX = tmpX
-		        prevControlY = tmpY
+		        prevControlX = controlX1
+		        prevControlY = controlY1
 		        i = i + 1
 		        tmpX = penX + Val(path(i))
 		        i = i + 1
@@ -2584,6 +2613,7 @@ Protected Module SVG
 		    elseif path(i) = "z" then // close path
 		      
 		      prevClosed = true
+		      shape.AddLineToPoint subPathStartX, subPathStartY
 		      updateMarkerEndData hasMarkerEndData, markerEndX, markerEndY, markerAngle, currentPathX, currentPathY, subPathStartX, subPathStartY
 		      currentPathX = subPathStartX
 		      currentPathY = subPathStartY
@@ -2635,6 +2665,8 @@ Protected Module SVG
 		  Var rawPoints As String
 		  Var tmpArr() As String
 		  Var coord() As String
+		  Var firstX As Double
+		  Var firstY As Double
 		  
 		  style = New JSONItem("{}")
 		  style.ApplyValues parentStyle
@@ -2659,6 +2691,8 @@ Protected Module SVG
 		        tmpX = Val(coord(0))
 		        tmpY = Val(coord(1))
 		        transformPoint tmpX, tmpY, matrix
+		        firstX = tmpX
+		        firstY = tmpY
 		        path.MoveToPoint tmpX, tmpY
 		        firstSetFound = True
 		        Exit For
@@ -2679,6 +2713,8 @@ Protected Module SVG
 		      path.AddLineToPoint tmpX, tmpY
 		    End If
 		  Next
+		  
+		  path.AddLineToPoint firstX, firstY
 		  
 		  // Render (closed = True so you get a join at the end)
 		  RenderPath g, path, style, matrix(0), True, True, True
@@ -2764,8 +2800,8 @@ Protected Module SVG
 		  
 		  x = style.LookupDouble("x")
 		  y = style.LookupDouble("y")
-		  width = style.LookupDouble("width")
-		  height = style.LookupDouble("height")
+		  width = svgLengthToPixels(style.LookupString("width", ""), 0, g.Width)
+		  height = svgLengthToPixels(style.LookupString("height", ""), 0, g.Height)
 		  
 		  if (width > 0) and (height > 0) then
 		    
@@ -2803,6 +2839,11 @@ Protected Module SVG
 		      path.AddLineToPoint tmpX, tmpY
 		      
 		      tmpX = x + width
+		      tmpY = y
+		      transformPoint tmpX, tmpY, matrix
+		      path.AddLineToPoint tmpX, tmpY
+		      
+		      tmpX = x
 		      tmpY = y
 		      transformPoint tmpX, tmpY, matrix
 		      path.AddLineToPoint tmpX, tmpY
@@ -2938,8 +2979,8 @@ Protected Module SVG
 		  
 		  x = style.LookupDouble("x")
 		  y = style.LookupDouble("y")
-		  width = style.LookupDouble("width")
-		  height = style.LookupDouble("height")
+		  width = svgLengthToPixels(style.LookupString("width", ""), 0, g.Width)
+		  height = svgLengthToPixels(style.LookupString("height", ""), 0, g.Height)
 		  
 		  if width <= 0 then
 		    width = g.Width
