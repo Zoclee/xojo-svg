@@ -1209,7 +1209,7 @@ Protected Module SVG
 		    
 		    g.DrawingColor = determineColor(stroke)
 		    g.PenSize = strokeWidth
-		    g.DrawPath path, false
+		    g.DrawPath path, closed
 		  end if
 		  
 		  g.RestoreState()
@@ -2713,8 +2713,6 @@ Protected Module SVG
 		      path.AddLineToPoint tmpX, tmpY
 		    End If
 		  Next
-		  
-		  path.AddLineToPoint firstX, firstY
 		  
 		  // Render (closed = True so you get a join at the end)
 		  RenderPath g, path, style, matrix(0), True, True, True
