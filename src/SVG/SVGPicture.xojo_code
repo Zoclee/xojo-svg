@@ -22,6 +22,8 @@ Protected Class SVGPicture
 		  
 		  mWidth = 0
 		  mHeight = 0
+		  mViewboxWidth = 0
+		  mViewboxHeight = 0
 		  
 		  if mSVGDocument <> nil then
 		    
@@ -33,27 +35,27 @@ Protected Class SVGPicture
 		        mWidth = Ceiling(LengthToPixels(node.GetAttribute("width")))
 		        mHeight = Ceiling(LengthToPixels(node.GetAttribute("height")))
 		        
-		        // Fallback to viewBox dimensions when width/height are omitted.
-		        if (mWidth <= 0) or (mHeight <= 0) then
-		          viewBox = node.GetAttribute("viewBox").Trim()
-		          if viewBox = "" then
-		            viewBox = node.GetAttribute("viewbox").Trim()
-		          end if
+		        viewBox = node.GetAttribute("viewBox").Trim()
+		        if viewBox = "" then
+		          viewBox = node.GetAttribute("viewbox").Trim()
+		        end if
+		        
+		        if viewBox <> "" then
+		          viewBox = viewBox.ReplaceAll(",", " ")
+		          while viewBox.IndexOf("  ") >= 0
+		            viewBox = viewBox.ReplaceAll("  ", " ")
+		          wend
 		          
-		          if viewBox <> "" then
-		            viewBox = viewBox.ReplaceAll(",", " ")
-		            while viewBox.IndexOf("  ") >= 0
-		              viewBox = viewBox.ReplaceAll("  ", " ")
-		            wend
-		            
-		            parts = viewBox.Split(" ")
-		            if parts.LastIndex >= 3 then
-		              if mWidth <= 0 then
-		                mWidth = Val(parts(2))
-		              end if
-		              if mHeight <= 0 then
-		                mHeight = Val(parts(3))
-		              end if
+		          parts = viewBox.Split(" ")
+		          if parts.LastIndex >= 3 then
+		            mViewboxWidth = Val(parts(2))
+		            mViewboxHeight = Val(parts(3))
+		            // Fallback to viewBox dimensions when width/height are omitted.
+		            if mWidth <= 0 then
+		              mWidth = mViewboxWidth
+		            end if
+		            if mHeight <= 0 then
+		              mHeight = mViewboxHeight
 		            end if
 		          end if
 		        end if
@@ -160,6 +162,14 @@ Protected Class SVGPicture
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
+		Private mViewboxHeight As Double
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mViewboxWidth As Double
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
 		Private mWidth As Integer
 	#tag EndProperty
 
@@ -217,6 +227,24 @@ Protected Class SVGPicture
 			End Set
 		#tag EndSetter
 		SVGString As String
+	#tag EndComputedProperty
+
+	#tag ComputedProperty, Flags = &h0
+		#tag Getter
+			Get
+			  Return mViewboxHeight
+			End Get
+		#tag EndGetter
+		ViewboxHeight As Double
+	#tag EndComputedProperty
+
+	#tag ComputedProperty, Flags = &h0
+		#tag Getter
+			Get
+			  Return mViewboxWidth
+			End Get
+		#tag EndGetter
+		ViewboxWidth As Double
 	#tag EndComputedProperty
 
 	#tag ComputedProperty, Flags = &h0
