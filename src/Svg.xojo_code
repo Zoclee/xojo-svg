@@ -1223,6 +1223,28 @@ Protected Module SVG
 		End Sub
 	#tag EndMethod
 
+	#tag Method, Flags = &h0
+		Function RasterizeSVG(document As XmlDocument, width As Integer, height As Integer, stretch As Boolean = false) As Picture
+		  if document = nil or width <= 0 or height <= 0 then
+		    return nil
+		  end if
+
+		  Var result As new Picture(width, height)
+		  Var matrix() As Double = identityMatrix()
+		  mClasses = new JSONItem("{}")
+		  mNodes = new Dictionary()
+
+		  for i As Integer = 0 to document.ChildCount - 1
+		    Var root As XmlNode = document.Child(i)
+		    if root.Name = "svg" then
+		      BuildNodeDictionary(root)
+		      render_svg(root, result.Graphics, matrix, new JSONItem("{}"), width, height, stretch)
+		    end if
+		  next
+		  return result
+		End Function
+	#tag EndMethod
+
 	#tag Method, Flags = &h21
 		Private Sub renderXML(g As Graphics, xdoc As XmlDocument, x As Integer, y As Integer, w1 As Integer = -10000, h1 As Integer = -10000, sx As Integer = 0, sy As Integer = 0, w2 As Integer = -10000, h2 As Integer = -10000)
 		  Var i As Integer
@@ -2934,7 +2956,7 @@ Protected Module SVG
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub render_svg(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem)
+		Private Sub render_svg(node As XmlNode, g As Graphics, parentMatrix() As Double, parentStyle As JSONItem, viewportWidth As Integer = 0, viewportHeight As Integer = 0, stretch As Boolean = false)
 		  Var localStyle As JSONItem
 		  Var style As JSONItem
 		  Var matrix() As Double
@@ -2950,6 +2972,10 @@ Protected Module SVG
 		  Var minY As Double
 		  Var viewBoxWidth As Double
 		  Var viewBoxHeight As Double
+		  Var intrinsicWidth As Double
+		  Var intrinsicHeight As Double
+		  Var hasViewBox As Boolean
+		  Var rasterViewport As Boolean = viewportWidth > 0 and viewportHeight > 0
 		  Var preserveAspectRatio As String
 		  Var align As String
 		  Var meetOrSlice As String
@@ -2981,12 +3007,20 @@ Protected Module SVG
 		  mulMatrix = translationMatrix(x, y)
 		  matrix = matrixMultiply(matrix, mulMatrix)
 		  
+		  intrinsicWidth = width
+		  intrinsicHeight = height
+		  if rasterViewport then
+		    width = viewportWidth
+		    height = viewportHeight
+		  end if
+
 		  viewBox = node.GetAttribute("viewBox").Trim()
 		  if viewBox = "" then
 		    viewBox = node.GetAttribute("viewbox").Trim()
 		  end if
 		  
 		  if viewBox <> "" then
+		    viewBox = viewBox.ReplaceAll(Chr(9), " ").ReplaceAll(Chr(10), " ").ReplaceAll(Chr(13), " ")
 		    viewBox = viewBox.ReplaceAll(",", " ")
 		    while viewBox.IndexOf("  ") >= 0
 		      viewBox = viewBox.ReplaceAll("  ", " ")
@@ -3000,11 +3034,15 @@ Protected Module SVG
 		      viewBoxHeight = Val(viewBoxArr(3))
 		      
 		      if (viewBoxWidth > 0) and (viewBoxHeight > 0) then
+		        hasViewBox = true
 		        preserveAspectRatio = node.GetAttribute("preserveAspectRatio").Trim().Lowercase()
 		        if preserveAspectRatio = "" then
 		          preserveAspectRatio = "xmidymid meet"
 		        end if
 		        
+		        if stretch then
+		          preserveAspectRatio = "none"
+		        end if
 		        if preserveAspectRatio = "none" then
 		          scaleX = width / viewBoxWidth
 		          scaleY = height / viewBoxHeight
@@ -3047,6 +3085,8 @@ Protected Module SVG
 		          
 		          mulMatrix = scaleMatrix(scale, scale)
 		          matrix = matrixMultiply(matrix, mulMatrix)
+		          scaleX = scale
+		          scaleY = scale
 		        end if
 		        
 		        mulMatrix = translationMatrix(-minX, -minY)
@@ -3055,11 +3095,32 @@ Protected Module SVG
 		    end if
 		  end if
 		  
-		  i = 0
-		  while i < node.ChildCount
-		    renderNode node.Child(i), g, matrix, style
-		    i = i + 1
-		  wend
+		  if rasterViewport then
+		    if not hasViewBox then
+		      scaleX = width / intrinsicWidth
+		      scaleY = height / intrinsicHeight
+		      matrix = matrixMultiply(scaleMatrix(scaleX, scaleY), matrix)
+		    end if
+		    // Let the graphics context scale strokes and text as well as geometry.
+		    // Remove that scale from the coordinate matrix to avoid applying it twice.
+		    for column As Integer = 0 to 2
+		      matrix(column) = matrix(column) / scaleX
+		      matrix(column + 3) = matrix(column + 3) / scaleY
+		    next
+		    g.SaveState()
+		    g.ScaleX = scaleX
+		    g.ScaleY = scaleY
+		  end if
+
+		  try
+		    i = 0
+		    while i < node.ChildCount
+		      renderNode node.Child(i), g, matrix, style
+		      i = i + 1
+		    wend
+		  finally
+		    if rasterViewport then g.RestoreState()
+		  end try
 		  
 		End Sub
 	#tag EndMethod

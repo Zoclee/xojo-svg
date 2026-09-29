@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200">
+  <rect width="400" height="200" fill="white"/>
+  <path d="M 2 2 H 398 V 198 H 2 Z" fill="none" stroke="#202020" stroke-width="2"/>
+  <path d="M 4 4 H 28 V 28 H 4 Z" fill="#ff0000"/>
+  <path d="M 372 4 H 396 V 28 H 372 Z" fill="#00aa00"/>
+  <path d="M 4 172 H 28 V 196 H 4 Z" fill="#0000ff"/>
+  <path d="M 372 172 H 396 V 196 H 372 Z" fill="#ff00ff"/>
+  <g font-family="Arial" font-size="14" fill="#000000">
+    <text x="36" y="20">TOP LEFT</text>
+    <text x="280" y="20">TOP RIGHT</text>
+    <text x="36" y="190">BOTTOM LEFT</text>
+    <text x="254" y="190">BOTTOM RIGHT</text>
+  </g>
+  <g transform="translate(200 100) scale(1.5)">
+    <path d="M -30 0 L 0 -30 L 30 0 L 0 30 Z" fill="#ffcc00" stroke="#202020" stroke-width="2"/>
+  </g>
+  <path d="M 100 60 H 140 M 120 40 V 80" fill="none" stroke="#008080" stroke-width="4"/>
+  <!-- Half-unit bars resolve into separate pixels at 2x; bitmap enlargement cannot recover them. -->
+  <path d="M 160 85 h .5 v 20 h -.5 Z M 161 85 h .5 v 20 h -.5 Z M 162 85 h .5 v 20 h -.5 Z M 163 85 h .5 v 20 h -.5 Z" fill="#000000"/>
+</svg>
