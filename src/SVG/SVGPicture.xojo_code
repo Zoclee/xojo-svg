@@ -117,6 +117,21 @@ Protected Class SVGPicture
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Function ToPicture(width As Integer, height As Integer) As Picture
+		  Var result As Picture
+		  
+		  if width <= 0 or height <= 0 or mSVGDocument = nil then
+		    return nil
+		  end if
+		  
+		  result = new Picture(width, height)
+		  result.Graphics.DrawSVG(mSVGDocument, 0, 0, width, height)
+		  
+		  return result
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function ToPicture() As Picture
 		  Var pictureHeight As Integer
 		  Var pictureWidth As Integer
